@@ -1,5 +1,7 @@
 # Installing Odoo 18.0 with one command (Supports multiple Odoo instances on one server).
 
+Based on [https://github.com/minhng92/odoo-18-docker-compose](https://github.com/minhng92/odoo-18-docker-compose)
+
 ## Quick Installation
 
 Install [docker](https://docs.docker.com/get-docker/) and [docker-compose](https://docs.docker.com/compose/install/) yourself, then run the following to set up first Odoo instance @ `localhost:10018` (default master password: `minhng.info`):
