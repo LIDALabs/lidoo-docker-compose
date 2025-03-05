@@ -1,3 +1,3 @@
 [submodule "base_l10n_ve_addons"]
 	path = base_l10n_ve_addons
-	url = git@github.com:gusaln/odoo-venezuela.git
+	url = https://github.com/gusaln/odoo-venezuela.git
