@@ -9,8 +9,8 @@ services:
     environment:
       - SERVICE_FQDN_ODOO_8069
       - HOST=db
-      - USER=$SERVICE_USER_POSTGRES
-      - PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      - USER=${SERVICE_USER_POSTGRES}
+      - PASSWORD=${SERVICE_PASSWORD_POSTGRES}
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
@@ -31,9 +31,10 @@ services:
   db:
     image: postgres:17-alpine
     environment:
+      - PGPASSWORD=${SERVICE_PASSWORD_POSTGRES}
       - POSTGRES_DB=postgres
-      - POSTGRES_USER=$SERVICE_USER_POSTGRES
-      - POSTGRES_PASSWORD=$SERVICE_PASSWORD_POSTGRES
+      - POSTGRES_USER=${SERVICE_USER_POSTGRES}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_POSTGRES}
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
