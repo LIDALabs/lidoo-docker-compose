@@ -1,11 +1,11 @@
 services:
-  odoo18:
-    image: odoo:18
+  odoo:
+    image: odoo:17
     depends_on:
       - db
     ports:
-      - "10018:8069"
-      - "20018:8072" # live chat
+      - "8069:8069"
+      - "8072:8072" # live chat
     environment:
       - SERVICE_FQDN_ODOO_8069
       - HOST=db
@@ -17,7 +17,7 @@ services:
       - ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
       - ./config:/etc/odoo 
       - ./addons:/mnt/extra-addons
-      - ./base_l10n_ve_addons:/mnt/base_l10n_ve_addons
+      - ./base_l10n_ve_addons:/mnt/l10n_ve_addons
       - odoo-web-data:/var/lib/odoo
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]
