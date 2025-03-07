@@ -1,3 +1,4 @@
-[submodule "base_l10n_ve_addons"]
-	path = base_l10n_ve_addons
-	url = https://github.com/gusaln/odoo-venezuela.git
+[submodule "l10n_ve"]
+	path = l10n_ve
+	url = https://github.com/binaural-dev/odoo-venezuela.git
+	branch = 17.0

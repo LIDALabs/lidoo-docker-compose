@@ -1,5 +1,5 @@
 postgresql/
-var/odoo-server.log
-var/addons/
-var/sessions/
-var/filestore/
+data/odoo-server.log
+data/addons/
+data/sessions/
+data/filestore/

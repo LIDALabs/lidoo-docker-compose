@@ -1,14 +1,12 @@
 services:
   odoo:
-    restart: always             # run as a service
+    restart: always # run as a service
     image: odoo:17
     depends_on:
       - db
     ports:
       - "10018:8069"
       - "20018:8072" # live chat
-    # tty: true
-    command: --
     environment:
       HOST: db
       USER: ${DB_USERNAME:-odoo}
@@ -16,11 +14,11 @@ services:
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
-      - ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
       - ./config:/etc/odoo
       - ./addons:/mnt/extra-addons
-      - ./base_l10n_ve_addons:/mnt/base_l10n_ve_addons
-      - odoo-web-data:/var/lib/odoo
+      - ./l10n_ve:/mnt/l10n_ve_addons
+      - ./entrypoint.sh:/entrypoint.sh # if you want to install additional Python packages, uncomment this line!
+      - ./data:/var/lib/odoo
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]
       interval: 2s
@@ -30,16 +28,16 @@ services:
       - intranet
 
   db:
-    restart: always             # run as a service
+    restart: always # run as a service
     image: postgres:17
     environment:
       POSTGRES_DB: postgres
-      PGPASSWORD: '${DB_PASSWORD:-supersecret}'
+      PGPASSWORD: "${DB_PASSWORD:-supersecret}"
       POSTGRES_USER: ${DB_USERNAME:-odoo}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-supersecret}
-      PGDATA: '/var/lib/postgresql/data/pgdata'
+      PGDATA: "/var/lib/postgresql/data/pgdata"
     volumes:
-        - ./postgresql:/var/lib/postgresql/data
+      - ./postgresql:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
       interval: 5s
@@ -49,16 +47,13 @@ services:
       - intranet
 
   mailpit:
-    image: 'axllent/mailpit:latest'
+    image: "axllent/mailpit:latest"
     ports:
-      - '${FORWARD_MAILPIT_PORT:-1025}:1025'
-      - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025'
+      - "${FORWARD_MAILPIT_PORT:-1025}:1025"
+      - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
     networks:
       - intranet
 
-volumes:
-  odoo-web-data:
-  
 networks:
   intranet:
     driver: bridge
