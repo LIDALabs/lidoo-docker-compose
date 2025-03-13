@@ -8,6 +8,11 @@ COPY ./config/requirements.txt /etc/odoo/
 RUN pip3 install pip --upgrade \
     && pip3 install -r /etc/odoo/requirements.txt
 
+# Copy enterprise addons
+COPY ./enterprise /mnt/enterprise
+# Set permissions
+RUN chown -R odoo /mnt/enterprise
+
 # Copy Odoo configuration file
 COPY ./config/odoo.conf /etc/odoo/
  # Copy extra addons
