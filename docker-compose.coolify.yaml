@@ -8,9 +8,6 @@ services:
         - tag=lidoo:17-e-coolify
     depends_on:
       - db
-    ports:
-      - "8069:8069"
-      - "8072:8072" # live chat
     environment:
       SERVICE_FQDN_ODOO_8069:
       HOST: db
