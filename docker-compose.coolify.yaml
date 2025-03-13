@@ -1,6 +1,11 @@
 services:
   odoo:
-    image: odoo:17
+    # image: odoo:17
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        - tag=lidoo:17-coolify
     depends_on:
       - db
     ports:
@@ -12,15 +17,14 @@ services:
       USER: '${SERVICE_USER_POSTGRES}'
       PASSWORD: '${SERVICE_PASSWORD_POSTGRES}'
     volumes:
-      - ./entrypoint.sh:/entrypoint.sh
       - ./addons:/mnt/extra-addons
       - odoo-data:/var/lib/odoo
-      - type: bind
-        source: ./l10n_ve
-        target: /mnt/l10n_ve_addons
-      - type: bind
-        source: ./config/odoo.conf
-        target: /etc/odoo/odoo.conf
+      # - type: bind
+      #   source: ./l10n_ve
+      #   target: /mnt/l10n_ve_addons
+      # - type: bind
+      #   source: ./config/odoo.conf
+      #   target: /etc/odoo/odoo.conf
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]
       interval: 2s
