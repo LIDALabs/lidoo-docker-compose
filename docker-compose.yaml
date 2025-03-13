@@ -1,24 +1,26 @@
 services:
   odoo:
-    restart: always # run as a service
+    restart: always             # run as a service
     image: odoo:17
     depends_on:
       - db
     ports:
-      - "10018:8069"
-      - "20018:8072" # live chat
+      - "10017:8069"
+      - "20017:8072"
+    # tty: true
+    # command: --
     environment:
       HOST: db
-      USER: ${DB_USERNAME:-odoo}
-      PASSWORD: ${DB_PASSWORD:-supersecret}
+      USER: ${POSTGRES_USER:-odoo}
+      PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
+      - ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
       - ./config:/etc/odoo
+      - odoo-data:/var/lib/odoo
       - ./addons:/mnt/extra-addons
       - ./l10n_ve:/mnt/l10n_ve_addons
-      - ./entrypoint.sh:/entrypoint.sh # if you want to install additional Python packages, uncomment this line!
-      - ./data:/var/lib/odoo
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]
       interval: 2s
@@ -32,10 +34,12 @@ services:
     image: postgres:17
     environment:
       POSTGRES_DB: postgres
-      PGPASSWORD: "${DB_PASSWORD:-supersecret}"
-      POSTGRES_USER: ${DB_USERNAME:-odoo}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-supersecret}
-      PGDATA: "/var/lib/postgresql/data/pgdata"
+      PGPASSWORD: '${POSTGRES_PASSWORD:-supersecret}'
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
+      PGDATA: '/var/lib/postgresql/data/pgdata'
+    ports:
+      - "5432:5432"
     volumes:
       - ./postgresql:/var/lib/postgresql/data
     healthcheck:
@@ -46,14 +50,25 @@ services:
     networks:
       - intranet
 
-  mailpit:
-    image: "axllent/mailpit:latest"
+  adminer:
+    image: adminer
     ports:
-      - "${FORWARD_MAILPIT_PORT:-1025}:1025"
-      - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
+      - "${FORWARD_ADMINER_PORT:-8888}:8080"
     networks:
       - intranet
+
+  # mailpit:
+  #   image: "axllent/mailpit:latest"
+  #   ports:
+  #     - "${FORWARD_MAILPIT_PORT:-1025}:1025"
+  #     - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
+  #   networks:
+  #     - intranet
 
 networks:
   intranet:
     driver: bridge
+
+
+volumes:
+  odoo-data:

@@ -9,17 +9,17 @@ services:
     environment:
       SERVICE_FQDN_ODOO_8069:
       HOST: db
-      USER: ${SERVICE_USER_POSTGRES}
-      PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      USER: '${SERVICE_USER_POSTGRES}'
+      PASSWORD: '${SERVICE_PASSWORD_POSTGRES}'
     volumes:
+      - ./entrypoint.sh:/entrypoint.sh
       - ./addons:/mnt/extra-addons
-      - ./l10n_ve:/mnt/l10n_ve_addons
+      - odoo-data:/var/lib/odoo
       - type: bind
-        source: ./odoo-data
-        target: /var/lib/odoo
-        is_directory: true # This will tell Coolify to create the directory (this is not available in a normal docker-compose)
+        source: ./l10n_ve
+        target: /mnt/l10n_ve_addons
       - type: bind
-        source: ./odoo.conf
+        source: ./config/odoo.conf
         target: /etc/odoo/odoo.conf
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]
@@ -30,10 +30,10 @@ services:
   db:
     image: postgres:17-alpine
     environment:
-      PGPASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      PGPASSWORD: '${SERVICE_PASSWORD_POSTGRES}'
       POSTGRES_DB: postgres
-      POSTGRES_USER: ${SERVICE_USER_POSTGRES}
-      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
+      POSTGRES_USER: '${SERVICE_USER_POSTGRES}'
+      POSTGRES_PASSWORD: '${SERVICE_PASSWORD_POSTGRES}'
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -44,3 +44,4 @@ services:
 
 volumes:
   db-data:
+  odoo-data:

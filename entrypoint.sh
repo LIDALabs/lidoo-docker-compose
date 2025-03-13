@@ -1,6 +1,11 @@
 #!/bin/bash
+# basado en https://github.com/odoo/docker/blob/master/18.0/entrypoint.sh
 
 set -e
+
+if [ -v PASSWORD_FILE ]; then
+    PASSWORD="$(< $PASSWORD_FILE)"
+fi
 
 # set the postgres database host, port, user and password according to the environment
 # and pass them as arguments to the odoo process if not present in the config file
