@@ -4,8 +4,11 @@ DESTINATION=$1
 # Create PostgreSQL directory
 mkdir -p $DESTINATION/postgresql
 
-# Create enterprise hook
+# Create enterprise mountpoint
 mkdir -p $DESTINATION/enterprise
+
+# Create data dirs
+sudo chmod -R 777 $DESTINATION/config
 
 # Change ownership to current user and set restrictive permissions for security
 sudo chown -R odoousr:odoousr $DESTINATION
