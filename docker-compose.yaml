@@ -18,9 +18,10 @@ services:
       #- /etc/localtime:/etc/localtime:ro
       - ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
       - ./config:/etc/odoo
-      - odoo-data:/var/lib/odoo
-      - ./addons:/mnt/extra-addons
-      - ./l10n_ve:/mnt/l10n_ve_addons
+      # - odoo-data:/var/lib/odoo
+      - ./enterprise:/mnt/enterprise
+      - ./l10n_ve:/mnt/l10n_ve_fiscal
+      - ./addons:/mnt/extra_addons
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]
       interval: 2s
@@ -70,5 +71,5 @@ networks:
     driver: bridge
 
 
-volumes:
-  odoo-data:
+# volumes:
+#   odoo-data:

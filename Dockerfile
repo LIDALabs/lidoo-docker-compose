@@ -11,15 +11,15 @@ RUN pip3 install pip --upgrade \
 # Copy Odoo configuration file
 COPY ./config/odoo.conf /etc/odoo/
  # Copy extra addons
- COPY ./addons /mnt/extra-addons
+ COPY ./addons /mnt/extra_addons
  # Copy localization
-COPY ./l10n_ve /mnt/l10n_ve_addons
+COPY ./l10n_ve /mnt/l10n_ve_fiscal
 
-# Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
+# Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra_addons for users addons
 RUN chown odoo /etc/odoo/odoo.conf \
-    && chown -R odoo /mnt/extra-addons \
-    && chown -R odoo /mnt/l10n_ve_addons
-VOLUME ["/var/lib/odoo", "/mnt/extra-addons", "/mnt/l10n_ve_addons"]
+    && chown -R odoo /mnt/extra_addons \
+    && chown -R odoo /mnt/l10n_ve_fiscal
+VOLUME ["/var/lib/odoo", "/mnt/extra_addons", "/mnt/l10n_ve_fiscal"]
 
 USER odoo
 

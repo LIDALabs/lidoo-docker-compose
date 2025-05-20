@@ -14,7 +14,9 @@ services:
       USER: '${SERVICE_USER_POSTGRES}'
       PASSWORD: '${SERVICE_PASSWORD_POSTGRES}'
     volumes:
-      - ./addons:/mnt/extra-addons
+      - ./addons:/mnt/extra_addons
+      # Este es un punto de acceso para poder subir los addons de enterprise.
+      - ./enterprise:/mnt/enterprise
       - odoo-data:/var/lib/odoo
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]

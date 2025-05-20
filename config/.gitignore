@@ -1,0 +1,4 @@
+odoo-server.log
+addons/
+sessions/
+filestore/

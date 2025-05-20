@@ -1,17 +1,14 @@
 #!/bin/bash
 DESTINATION=$1
-PORT=$2
-CHAT=$3
-
-# Clone Odoo directory
-git clone --branch=17.0-lida --depth=1 https://github.com/LIDALabs/odoo-docker-compose $DESTINATION
-rm -rf $DESTINATION/.git
 
 # Create PostgreSQL directory
 mkdir -p $DESTINATION/postgresql
 
+# Create enterprise hook
+mkdir -p $DESTINATION/enterprise
+
 # Change ownership to current user and set restrictive permissions for security
-sudo chown -R $USER:$USER $DESTINATION
+sudo chown -R odoousr:odoousr $DESTINATION
 sudo chmod -R 700 $DESTINATION  # Only the user has access
 
 # Check if running on macOS
@@ -27,23 +24,6 @@ else
   sudo sysctl -p
 fi
 
-# Set ports in docker-compose.yml
-# Update docker-compose configuration
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  # macOS sed syntax
-  sed -i '' 's/10017/'$PORT'/g' $DESTINATION/docker-compose.yml
-  sed -i '' 's/20017/'$CHAT'/g' $DESTINATION/docker-compose.yml
-else
-  # Linux sed syntax
-  sed -i 's/10017/'$PORT'/g' $DESTINATION/docker-compose.yml
-  sed -i 's/20017/'$CHAT'/g' $DESTINATION/docker-compose.yml
-fi
-
 # Set file and directory permissions after installation
 find $DESTINATION -type f -exec chmod 644 {} \;
 find $DESTINATION -type d -exec chmod 755 {} \;
-
-# Run Odoo
-docker-compose -f $DESTINATION/docker-compose.yml up -d
-
-echo "Odoo started at http://localhost:$PORT | Master Password: minhng.info | Live chat port: $CHAT"
