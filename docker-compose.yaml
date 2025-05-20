@@ -35,46 +35,46 @@ services:
       - traefik.enable=true
       #----------------------------------------------- routers for: odoo --------------------------------------------------
       # http
-      - traefik.http.routers.ujap-odoo-http.rule=Host(`ujap.lidalabs.com`)
-      - traefik.http.routers.ujap-odoo-http.entrypoints=web
-      - traefik.http.routers.ujap-odoo-http.middlewares=redirect@file
-      - traefik.http.routers.ujap-odoo-http.service=ujap-odoo
+      - traefik.http.routers.odoo-http.rule=Host(`${ODOO_HOSTNAME}`)
+      - traefik.http.routers.odoo-http.entrypoints=web
+      - traefik.http.routers.odoo-http.middlewares=redirect@file
+      - traefik.http.routers.odoo-http.service=odoo-service
       # https
-      - traefik.http.routers.ujap-odoo-https.rule=Host(`ujap.lidalabs.com`)
-      - traefik.http.routers.ujap-odoo-https.entrypoints=websecure
-      - traefik.http.routers.ujap-odoo-https.service=ujap-odoo
-      - traefik.http.routers.ujap-odoo-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.ujap-odoo-https.middlewares=gzip,sslheader,limit
+      - traefik.http.routers.odoo-https.rule=Host(`${ODOO_HOSTNAME}`)
+      - traefik.http.routers.odoo-https.entrypoints=websecure
+      - traefik.http.routers.odoo-https.service=odoo-service
+      - traefik.http.routers.odoo-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.odoo-https.middlewares=gzip,sslheader,limit
       #----------------------------- routes for: odoo/web/database || odoo/website/info  -----------------------------
       # http 
-      - traefik.http.routers.odoo-db-http.rule=Host(`ujap.lidalabs.com`) && (PathPrefix(`/web/database`) || PathPrefix(`/website/info`))
+      - traefik.http.routers.odoo-db-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/web/database`) || PathPrefix(`/website/info`))
       - traefik.http.routers.odoo-db-http.entrypoints=web
-      - traefik.http.routers.odoo-db-http.service=ujap-odoo
+      - traefik.http.routers.odoo-db-http.service=odoo-service
       - traefik.http.routers.odoo-db-http.middlewares=redirect@file
       - traefik.http.services.odoo-db-http.loadbalancer.server.port=8069
       # https 
-      - traefik.http.routers.odoo-db-https.rule=Host(`ujap.lidalabs.com`) && (PathPrefix(`/web/database`) || PathPrefix(`/website/info`))
+      - traefik.http.routers.odoo-db-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/web/database`) || PathPrefix(`/website/info`))
       - traefik.http.routers.odoo-db-https.entrypoints=websecure
-      - traefik.http.routers.odoo-db-https.service=ujap-odoo
+      - traefik.http.routers.odoo-db-https.service=odoo-service
       - traefik.http.routers.odoo-db-https.tls.certresolver=letsencrypt
       - traefik.http.routers.odoo-db-https.middlewares=gzip,sslheader,limit
       - traefik.http.services.odoo-db-https.loadbalancer.server.port=8069
       #---------------------------------------- routes for: odoo/longpolling ------------------------------------------------
       # http 
-      - traefik.http.routers.ujap-odoo-im-http.rule=Host(`ujap.lidalabs.com`) && (PathPrefix(`/longpolling`))
-      - traefik.http.routers.ujap-odoo-im-http.entrypoints=web
-      - traefik.http.routers.ujap-odoo-im-http.middlewares=redirect@file
-      - traefik.http.routers.ujap-odoo-im-http.service=ujap-odoo-im
+      - traefik.http.routers.odoo-im-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-http.entrypoints=web
+      - traefik.http.routers.odoo-im-http.middlewares=redirect@file
+      - traefik.http.routers.odoo-im-http.service=odoo-im-service
       # https 
-      - traefik.http.routers.ujap-odoo-im-https.rule=Host(`ujap.lidalabs.com`) && (PathPrefix(`/longpolling`))
-      - traefik.http.routers.ujap-odoo-im-https.entrypoints=websecure
-      - traefik.http.routers.ujap-odoo-im-https.service=ujap-odoo-im
-      - traefik.http.routers.ujap-odoo-im-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.ujap-odoo-im-https.middlewares=gzip,sslheader,limit
+      - traefik.http.routers.odoo-im-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-https.entrypoints=websecure
+      - traefik.http.routers.odoo-im-https.service=odoo-im-service
+      - traefik.http.routers.odoo-im-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.odoo-im-https.middlewares=gzip,sslheader,limit
       
       #====================================================== services ===========================================================
-      - traefik.http.services.ujap-odoo.loadbalancer.server.port=8069
-      - traefik.http.services.ujap-odoo-im.loadbalancer.server.port=8072
+      - traefik.http.services.odoo-service.loadbalancer.server.port=8069
+      - traefik.http.services.odoo-im-service.loadbalancer.server.port=8072
 
       #===================================================== middlewares =========================================================
       - traefik.http.middlewares.gzip.compress=true
@@ -103,12 +103,10 @@ services:
     networks:
       - intranet
 
-  adminer:
-    image: adminer
-    ports:
-      - "${FORWARD_ADMINER_PORT:-8888}:8080"
-    networks:
-      - intranet
+  # adminer:
+  #   image: adminer
+  #   networks:
+  #     - intranet
 
   # mailpit:
   #   image: "axllent/mailpit:latest"
@@ -121,7 +119,7 @@ services:
 networks:
   intranet:
     driver: bridge
-  web:
+  traefik-public:
     external: true
 
 # volumes:
