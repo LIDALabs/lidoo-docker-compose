@@ -7,7 +7,7 @@ services:
   traefik:
     image: "traefik:v2.4"
     # container_name: "traefik"
-    env_file: .env
+    # env_file: .env
     # environment:
     #   - UID=2000
     #   - GID=2000
@@ -32,7 +32,7 @@ services:
       # SSL configuration
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=http
-      - --certificatesresolvers.letsencrypt.acme.email=${LETS_ENCRYPT_CONTACT_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.email=${LETS_ENCRYPT_CONTACT_EMAIL:-soporte@lidalabs.com}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
       # Global HTTP -> HTTPS
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
@@ -40,8 +40,8 @@ services:
     networks:
       - traefik-public
     volumes:
-      - "${BASE_VOLUME_DIR}/traefik/conf/letsencrypt:/letsencrypt"
-      - "${BASE_VOLUME_DIR}/traefik/conf/dynamic.yml:/dynamic.yml"
+      - "./traefik/conf/letsencrypt:/letsencrypt"
+      - "./traefik/conf/dynamic.yml:/dynamic.yml"
       # So that Traefik can listen to the Docker events
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     labels:  

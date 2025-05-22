@@ -1,14 +1,12 @@
 services:
   odoo:
-    restart: always             # run as a service
+    restart: always # run as a service
     image: odoo:17
     depends_on:
       - db
-    ports:
-      - "10017:8069"
-      - "20017:8072"
-    # tty: true
-    # command: --
+    # ports:
+    #   - "10017:8069"
+    #   - "20017:8072"
     environment:
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
@@ -16,14 +14,13 @@ services:
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
-      - ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
+      - ./entrypoint.sh:/entrypoint.sh # if you want to install additional Python packages, uncomment this line!
       - ./config:/etc/odoo
-      # - odoo-data:/var/lib/odoo
       - ./enterprise:/mnt/enterprise
       - ./l10n_ve:/mnt/l10n_ve_fiscal
       - ./addons:/mnt/extra_addons
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8069"]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8069" ]
       interval: 2s
       timeout: 10s
       retries: 30
@@ -71,7 +68,7 @@ services:
       - traefik.http.routers.odoo-im-https.service=odoo-im-service
       - traefik.http.routers.odoo-im-https.tls.certresolver=letsencrypt
       - traefik.http.routers.odoo-im-https.middlewares=gzip,sslheader,limit
-      
+
       #====================================================== services ===========================================================
       - traefik.http.services.odoo-service.loadbalancer.server.port=8069
       - traefik.http.services.odoo-im-service.loadbalancer.server.port=8072
@@ -91,18 +88,15 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-odoo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
       PGDATA: '/var/lib/postgresql/data/pgdata'
-    ports:
-      - "5432:5432"
     volumes:
       - ./postgresql:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres" ]
       interval: 5s
       timeout: 20s
       retries: 10
     networks:
       - intranet
-
   # adminer:
   #   image: adminer
   #   networks:
@@ -121,6 +115,3 @@ networks:
     driver: bridge
   traefik-public:
     external: true
-
-# volumes:
-#   odoo-data:
