@@ -1,0 +1,10 @@
+$ODOODIR/config/*.log {
+    daily
+    missingok
+    rotate 14
+    compress
+    delaycompress
+    notifempty
+    create 640 $ODOOUSER $ODOOUSER
+    sharedscripts
+}
