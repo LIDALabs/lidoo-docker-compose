@@ -5,7 +5,7 @@ networks:
 
 services:
   traefik:
-    image: "traefik:v2.4"
+    image: "traefik:v3.4"
     # container_name: "traefik"
     # env_file: .env
     # environment:
@@ -24,24 +24,22 @@ services:
       # Docker configuration
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
-      - --providers.file.filename=/dynamic.yml
       - --providers.docker.network=traefik-public
       # Configure entrypoint
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       # SSL configuration
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
-      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=http
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.letsencrypt.acme.email=${LETS_ENCRYPT_CONTACT_EMAIL:-soporte@lidalabs.com}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
       # Global HTTP -> HTTPS
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      #- "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      #- "--entrypoints.web.http.redirections.entryPoint.scheme=https"
     networks:
       - traefik-public
     volumes:
-      - "./traefik/conf/letsencrypt:/letsencrypt"
-      - "./traefik/conf/dynamic.yml:/dynamic.yml"
+      - "./docker/volumes/traefik/letsencrypt:/letsencrypt"
       # So that Traefik can listen to the Docker events
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     labels:  
@@ -52,9 +50,9 @@ services:
       - traefik.http.routers.traefik-http.rule=Host(`traefik-ui.local`)
       - traefik.http.routers.traefik-http.entrypoints=web
       - traefik.http.routers.traefik-http.service=api@internal
-      - traefik.http.routers.traefik-http.middlewares=redirect@file
+      - traefik.http.routers.traefik-http.middlewares=redirect-to-https
       - traefik.http.routers.traefik-http.middlewares=traefik-auth
-      - traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$8EVjn/nj$$GiLUZqcbueTFeD23SuB6x0
+      - traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$OeVr9Tuf$$JOHE1yK6PQLWbUA2WtwQN0
 
       # HTTPS configuration
       - traefik.http.routers.traefik-https.rule=Host(`traefik-ui.local`)
@@ -66,3 +64,4 @@ services:
       
       - traefik.http.routers.traefik-https.middlewares=gzip
       - traefik.http.middlewares.gzip.compress=true
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
