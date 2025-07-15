@@ -2,13 +2,10 @@
 DESTINATION=$1
 
 # Create PostgreSQL directory
-mkdir -p $DESTINATION/postgresql
+mkdir -p $DESTINATION/database
 
-# Create enterprise mountpoint
+# Create mountpoints
 mkdir -p $DESTINATION/enterprise
-
-# Create data dirs
-sudo chmod -R 777 $DESTINATION/config
 
 # Change ownership to current user and set restrictive permissions for security
 sudo chown -R odoousr:odoousr $DESTINATION
@@ -28,5 +25,12 @@ else
 fi
 
 # Set file and directory permissions after installation
+echo 'Set file and directory permissions after installation'
 find $DESTINATION -type f -exec chmod 644 {} \;
 find $DESTINATION -type d -exec chmod 755 {} \;
+
+# Set special permissions
+echo 'Set special permissions'
+sudo chmod -R 777 $DESTINATION/config
+sudo chmod -R 777 $DESTINATION/enterprise
+sudo chmod -R 777 $DESTINATION/l10n_ve

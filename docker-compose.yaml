@@ -41,7 +41,7 @@ services:
       - traefik.http.routers.odoo-https.entrypoints=websecure
       - traefik.http.routers.odoo-https.service=odoo-service
       - traefik.http.routers.odoo-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.odoo-https.middlewares=gzip,sslheader,limit
+      - traefik.http.routers.odoo-https.middlewares=gzip,sslheader
       #----------------------------- routes for: odoo/web/database || odoo/website/info  -----------------------------
       # http 
       - traefik.http.routers.odoo-db-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/web/database`) || PathPrefix(`/website/info`))
@@ -54,7 +54,7 @@ services:
       - traefik.http.routers.odoo-db-https.entrypoints=websecure
       - traefik.http.routers.odoo-db-https.service=odoo-service
       - traefik.http.routers.odoo-db-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.odoo-db-https.middlewares=gzip,sslheader,limit
+      - traefik.http.routers.odoo-db-https.middlewares=gzip,sslheader
       - traefik.http.services.odoo-db-https.loadbalancer.server.port=8069
       #---------------------------------------- routes for: odoo/longpolling ------------------------------------------------
       # http 
@@ -67,7 +67,7 @@ services:
       - traefik.http.routers.odoo-im-https.entrypoints=websecure
       - traefik.http.routers.odoo-im-https.service=odoo-im-service
       - traefik.http.routers.odoo-im-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.odoo-im-https.middlewares=gzip,sslheader,limit
+      - traefik.http.routers.odoo-im-https.middlewares=gzip,sslheader
 
       #====================================================== services ===========================================================
       - traefik.http.services.odoo-service.loadbalancer.server.port=8069
