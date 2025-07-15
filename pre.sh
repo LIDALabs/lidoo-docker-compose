@@ -9,13 +9,14 @@ mkdir -p $DESTINATION/enterprise
 
 # Change ownership to current user and set restrictive permissions for security
 sudo chown -R odoousr:odoousr $DESTINATION
-sudo chmod -R 700 $DESTINATION  # Only the user has access
+# sudo chmod 700 $DESTINATION  # Only the user has access
 
 chmod -R 777 addons
 chmod -R 777 config
 chmod -R 777 database
 chmod -R 777 enterprise
 chmod -R 777 l10n_ve
+chmod -R 777 entrypoint.sh
 
 # Check if running on macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
