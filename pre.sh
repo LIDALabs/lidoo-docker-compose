@@ -11,6 +11,12 @@ mkdir -p $DESTINATION/enterprise
 sudo chown -R odoousr:odoousr $DESTINATION
 sudo chmod -R 700 $DESTINATION  # Only the user has access
 
+chmod -R 777 addons
+chmod -R 777 config
+chmod -R 777 database
+chmod -R 777 enterprise
+chmod -R 777 l10n_ve
+
 # Check if running on macOS
 if [[ "$OSTYPE" == "darwin"* ]]; then
   echo "Running on macOS. Skipping inotify configuration."
@@ -26,11 +32,5 @@ fi
 
 # Set file and directory permissions after installation
 echo 'Set file and directory permissions after installation'
-find $DESTINATION -type f -exec chmod 644 {} \;
-find $DESTINATION -type d -exec chmod 755 {} \;
-
-# Set special permissions
-echo 'Set special permissions'
-sudo chmod -R 777 $DESTINATION/config
-sudo chmod -R 777 $DESTINATION/enterprise
-sudo chmod -R 777 $DESTINATION/l10n_ve
+# find $DESTINATION -type f -exec chmod 644 {} \;
+# find $DESTINATION -type d -exec chmod 755 {} \;
