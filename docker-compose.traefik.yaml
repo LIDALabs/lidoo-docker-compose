@@ -47,7 +47,7 @@ services:
       - traefik.http.services.traefik.loadbalancer.server.port=8080
 
       # HTTP configuration
-      - traefik.http.routers.traefik-http.rule=Host(`traefik-ui.local`)
+      - traefik.http.routers.traefik-http.rule=Host(`${TRAEFIK_HOSTNAME:-traefik-ui.local}`)
       - traefik.http.routers.traefik-http.entrypoints=web
       - traefik.http.routers.traefik-http.service=api@internal
       - traefik.http.routers.traefik-http.middlewares=redirect-to-https
@@ -55,7 +55,7 @@ services:
       - traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$OeVr9Tuf$$JOHE1yK6PQLWbUA2WtwQN0
 
       # HTTPS configuration
-      - traefik.http.routers.traefik-https.rule=Host(`traefik-ui.local`)
+      - traefik.http.routers.traefik-https.rule=Host(`${TRAEFIK_HOSTNAME:-traefik-ui.local}`)
       - traefik.http.routers.traefik-https.entrypoints=websecure
       - traefik.http.routers.traefik-https.tls=true
       - traefik.http.routers.traefik-https.tls.options=default
