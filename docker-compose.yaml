@@ -1,4 +1,13 @@
 services:
+  # PARA MULTIPLES INSTANCIAS: COMENTAR
+  traefik-proxy:
+    extends:
+      file: common-services.yml
+      service: traefik
+    depends_on:
+      - odoo17
+  # PARA MULTIPLES INSTANCIAS: COMENTAR
+
   odoo17:
     restart: always # run as a service
     image: odoo:17
@@ -114,5 +123,8 @@ services:
 networks:
   intranet:
     driver: bridge
-  traefik-public:
-    external: true
+  # PARA MULTIPLES INSTANCIAS: DESCOMENTAR
+  # traefik-public:
+  #   external: true
+  # PARA MULTIPLES INSTANCIAS: DESCOMENTAR
+

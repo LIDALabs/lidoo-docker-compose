@@ -1,10 +1,13 @@
-networks:
-  traefik-public:
-    external: true
+# PARA MULTIPLES INSTANCIAS: DESCOMENTAR
+# networks:
+#   traefik-public:
+#     external: true
+# PARA MULTIPLES INSTANCIAS: DESCOMENTAR
 
 services:
   traefik:
-    image: "traefik:v3.4"
+    restart: always # run as a service
+    image: "traefik:v3"
     # container_name: "traefik"
     # env_file: .env
     # environment:
@@ -25,16 +28,16 @@ services:
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=traefik-public
       # Configure entrypoint
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
       # SSL configuration
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.letsencrypt.acme.email=${LETS_ENCRYPT_CONTACT_EMAIL:-soporte@lidalabs.com}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
       # Global HTTP -> HTTPS
-      #- "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      #- "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      #- --entrypoints.web.http.redirections.entryPoint.to=websecure
+      #- --entrypoints.web.http.redirections.entryPoint.scheme=https
     networks:
       - traefik-public
     volumes:
