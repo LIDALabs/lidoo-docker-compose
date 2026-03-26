@@ -67,3 +67,6 @@ services:
       - traefik.http.routers.traefik-https.middlewares=gzip
       - traefik.http.middlewares.gzip.compress=true
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+networks:
+  traefik-public:
+    external: true
