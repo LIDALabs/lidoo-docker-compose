@@ -28,6 +28,7 @@ services:
       - ./enterprise:/mnt/enterprise
       - ./l10n_ve:/mnt/l10n_ve_fiscal
       - ./addons:/mnt/extra_addons
+      - ./fonts:/mnt/fonts
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8069" ]
       interval: 2s
