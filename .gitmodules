@@ -1,6 +1,6 @@
 [submodule "l10n_ve"]
 	path = l10n_ve
-	url = https://github.com/LIDALabs/odoo-venezuela.git
+	url = git@github.com:LIDALabs/lidoo-venezuela.git
 	branch = 17.0-lida
 	shallow = true
 [submodule "enterprise"]
