@@ -27,6 +27,7 @@ services:
       - ./config:/etc/odoo
       - ./enterprise:/mnt/enterprise
       - ./l10n_ve:/mnt/l10n_ve_fiscal
+      - ./lidoo-analytics:/mnt/lidoo-analytics
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
     healthcheck:

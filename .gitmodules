@@ -3,3 +3,12 @@
 	url = https://github.com/LIDALabs/odoo-venezuela.git
 	branch = 17.0-lida
 	shallow = true
+[submodule "enterprise"]
+	path = enterprise
+	url = git@github.com:LIDALabs/lidoo-enterprise-internal.git
+	branch = 17.0
+	shallow = true
+[submodule "lidoo-analytics"]
+	path = lidoo-analytics
+	url = git@github.com:LIDALabs/lidoo-analytics.git
+	shallow = true
