@@ -1,21 +1,12 @@
 services:
-  # PARA MULTIPLES INSTANCIAS: COMENTAR
-  traefik-proxy:
-    extends:
-      file: common-services.yml
-      service: traefik
-    depends_on:
-      - odoo17
-  # PARA MULTIPLES INSTANCIAS: COMENTAR
-
   odoo17:
-    restart: always # run as a service
+    restart: always
     image: odoo:17
     depends_on:
       - db
-    # ports:
-    #   - "10017:8069"
-    #   - "20017:8072"
+    ports:
+      - "${ODOO_PORT:-8069}:8069"
+      - "${ODOO_LONGPOLL_PORT:-8072}:8072"
     environment:
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
@@ -27,8 +18,9 @@ services:
       - ./config:/etc/odoo
       - ./enterprise:/mnt/enterprise
       - ./l10n_ve:/mnt/l10n_ve_fiscal
-      - ./lidoo-analytics:/mnt/lidoo-analytics
       - ./addons:/mnt/extra_addons
+      - ./analytics:/mnt/analytics
+      - ./lidoo-analytics:/mnt/lidoo-analytics
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8069" ]
@@ -109,24 +101,9 @@ services:
       retries: 10
     networks:
       - intranet
-  # adminer:
-  #   image: adminer
-  #   networks:
-  #     - intranet
-
-  # mailpit:
-  #   image: "axllent/mailpit:latest"
-  #   ports:
-  #     - "${FORWARD_MAILPIT_PORT:-1025}:1025"
-  #     - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
-  #   networks:
-  #     - intranet
 
 networks:
   intranet:
     driver: bridge
-  # PARA MULTIPLES INSTANCIAS: DESCOMENTAR
-  # traefik-public:
-  #   external: true
-  # PARA MULTIPLES INSTANCIAS: DESCOMENTAR
-
+  traefik-public:
+    driver: bridge

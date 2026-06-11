@@ -1,9 +1,3 @@
-# PARA MULTIPLES INSTANCIAS: DESCOMENTAR
-# networks:
-#   traefik-public:
-#     external: true
-# PARA MULTIPLES INSTANCIAS: DESCOMENTAR
-
 services:
   traefik:
     restart: always # run as a service
