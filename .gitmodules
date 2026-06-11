@@ -2,7 +2,6 @@
 	path = l10n_ve
 	url = git@github.com:LIDALabs/lidoo-venezuela.git
 	branch = 17.0-lida
-	shallow = true
 [submodule "enterprise"]
 	path = enterprise
 	url = git@github.com:LIDALabs/lidoo-enterprise-internal.git
@@ -11,4 +10,3 @@
 [submodule "lidoo-analytics"]
 	path = lidoo-analytics
 	url = git@github.com:LIDALabs/lidoo-analytics.git
-	shallow = true
