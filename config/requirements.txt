@@ -8,4 +8,4 @@
 # paramiko==2.7.2 # for auto_backup module
 pandas==2.2.3
 beautifulsoup4==4.13.3
-odoo_upgrade @ git+https://github.com/odoo/upgrade-util@master
+# odoo_upgrade @ git+https://github.com/odoo/upgrade-util@master
