@@ -14,7 +14,9 @@ services:
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
-      - ./config:/etc/odoo
+      # Mount only the conf file so /etc/odoo is not a host bind for sessions/logs
+      - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
+      - odoo-data:/var/lib/odoo
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
     healthcheck:
@@ -107,6 +109,9 @@ services:
   #     - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
   #   networks:
   #     - intranet
+
+volumes:
+  odoo-data:
 
 networks:
   intranet:
