@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+.env.*
+database
+docs
+logrotate
+*.md
+docker-compose*.yaml
+Makefile
