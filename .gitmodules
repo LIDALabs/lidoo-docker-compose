@@ -1,5 +1,0 @@
-[submodule "l10n_ve"]
-	path = l10n_ve
-	url = https://github.com/LIDALabs/odoo-venezuela.git
-	branch = 17.0-lida
-	shallow = true
