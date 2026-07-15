@@ -23,5 +23,5 @@ VOLUME ["/var/lib/odoo", "/mnt/extra_addons", "/mnt/l10n_ve_fiscal"]
 
 USER odoo
 
-ENTRYPOINT ["/entrypoint.sh"]
+# Use the official image entrypoint (do not override)
 CMD ["odoo"]

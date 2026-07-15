@@ -1,21 +1,12 @@
 services:
-  # PARA MULTIPLES INSTANCIAS: COMENTAR
-  traefik-proxy:
-    extends:
-      file: common-services.yml
-      service: traefik
-    depends_on:
-      - odoo17
-  # PARA MULTIPLES INSTANCIAS: COMENTAR
-
   odoo17:
     restart: always # run as a service
     image: odoo:17
     depends_on:
       - db
-    # ports:
-    #   - "10017:8069"
-    #   - "20017:8072"
+    ports:
+      - "10017:8069"
+      - "20017:8072"
     environment:
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
@@ -23,7 +14,6 @@ services:
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
-      - ./entrypoint.sh:/entrypoint.sh # if you want to install additional Python packages, uncomment this line!
       - ./config:/etc/odoo
       - ./enterprise:/mnt/enterprise
       - ./l10n_ve:/mnt/l10n_ve_fiscal
@@ -37,7 +27,6 @@ services:
       retries: 30
     networks:
       - intranet
-      - traefik-public
 
     labels:
       - traefik.enable=true
