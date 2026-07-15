@@ -1,11 +1,5 @@
-# -----------------------
-# | Add Python packages |
-# -----------------------
-# To install below packages at startup, uncomment this line in "docker-compose.yml" file!
-# - ./entrypoint.sh:/entrypoint.sh
-# then down the docker container ($ docker-compose down) and up it again ($ docker-compose up -d).
-# -----------------------
-# paramiko==2.7.2 # for auto_backup module
+# Extra Python packages installed at image build (see Dockerfile).
+# Add pins required by modules under ./addons/.
+# paramiko==2.7.2  # for auto_backup module
 pandas==2.2.3
 beautifulsoup4==4.13.3
-# odoo_upgrade @ git+https://github.com/odoo/upgrade-util@masternt
