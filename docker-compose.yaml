@@ -1,12 +1,13 @@
 services:
-  odoo17:
+  odoo:
     restart: always # run as a service
-    image: odoo:17
+    build: .
+    image: lidoo-odoo:18
     depends_on:
       - db
     ports:
-      - "10017:8069"
-      - "20017:8072"
+      - "10018:8069"
+      - "20018:8072"
     environment:
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
