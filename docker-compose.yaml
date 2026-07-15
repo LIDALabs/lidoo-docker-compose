@@ -15,10 +15,8 @@ services:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
       - ./config:/etc/odoo
-      - ./enterprise:/mnt/enterprise
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
-      - ./oca-tools:/mnt/oca-tools
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8069" ]
       interval: 2s
