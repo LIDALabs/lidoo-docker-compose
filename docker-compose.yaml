@@ -1,18 +1,26 @@
 services:
+  # One Odoo process can serve multiple Postgres DBs (same container).
+  # Default: single DB. Rare multi-DB-by-subdomain: set dbfilter in config/odoo.conf
+  # (see comments there + README). No extra odoo service is required.
   odoo:
     restart: always
     build: .
     image: lidoo-odoo:18
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
-      - "10018:8069"
-      - "20018:8072"
+      - "${ODOO_HTTP_PORT:-10018}:8069"
+      - "${ODOO_GEVENT_PORT:-20018}:8072"
     environment:
+      # Official entrypoint → Odoo db_host / db_user / db_password
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
       PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Master password injected into runtime conf (see entrypoint below)
       ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
+    # Odoo does not read admin_passwd from env; build a runtime conf then use the
+    # official image entrypoint (wait-for-db + db CLI args).
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -24,20 +32,24 @@ services:
         printf 'admin_passwd = %s\n' "$$ODOO_ADMIN_PASSWD" >> "$$ODOO_RC"
         exec /entrypoint.sh odoo
     volumes:
-      #- /etc/timezone:/etc/timezone:ro
-      #- /etc/localtime:/etc/localtime:ro
+      # Mount only the conf file so /etc/odoo is not a host bind for sessions/logs
       - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
+      # Named volume for data_dir (sessions, filestore)
       - odoo_data:/var/lib/odoo
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8069" ]
-      interval: 2s
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8069/web/login" ]
+      interval: 5s
       timeout: 10s
       retries: 30
+      start_period: 30s
     networks:
       - intranet
+    # Traefik labels live only in docker-compose.traefik.yaml (optional overlay)
 
+  # Single Postgres instance. Holds one or many Odoo databases (no second db service).
+  # Host path ./database is legacy and unused; data lives in named volume db_data.
   db:
     restart: always
     image: postgres:17
@@ -57,6 +69,7 @@ services:
     networks:
       - intranet
 
+  # Local-only DB UI (not exposed via Traefik / public interfaces)
   pgadmin:
     restart: always
     image: dpage/pgadmin4:latest
@@ -82,8 +95,3 @@ volumes:
 networks:
   intranet:
     driver: bridge
-  # PARA MULTIPLES INSTANCIAS: DESCOMENTAR
-  # traefik-public:
-  #   external: true
-  # PARA MULTIPLES INSTANCIAS: DESCOMENTAR
-

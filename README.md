@@ -31,6 +31,8 @@ Edit `.env` and set at least:
 | `PGADMIN_DEFAULT_EMAIL` | pgAdmin login email |
 | `PGADMIN_DEFAULT_PASSWORD` | pgAdmin login password |
 | `PGADMIN_PORT` | pgAdmin host port (default `5050`) |
+| `ODOO_HTTP_PORT` | Host port for Odoo HTTP (default `10018`) |
+| `ODOO_GEVENT_PORT` | Host port for gevent / websocket (default `20018`) |
 
 Do not commit `.env`.
 
@@ -55,9 +57,9 @@ docker compose up -d --build
 
 | Service | URL / port |
 |---------|------------|
-| Odoo | http://localhost:10018 |
-| Odoo gevent | host port `20018` → container `8072` |
-| pgAdmin | http://127.0.0.1:5050 |
+| Odoo | http://localhost:${ODOO_HTTP_PORT:-10018} |
+| Odoo gevent | host `${ODOO_GEVENT_PORT:-20018}` → container `8072` |
+| pgAdmin | http://127.0.0.1:${PGADMIN_PORT:-5050} |
 
 The image `lidoo-odoo:18` is built from `Dockerfile` (Odoo 18 + `config/requirements.txt`). Rebuild after changing requirements:
 
@@ -68,13 +70,13 @@ docker compose up -d
 
 ## 5. First Odoo use
 
-1. Open http://localhost:10018
+1. Open http://localhost:10018 (or `ODOO_HTTP_PORT` from `.env`)
 2. Create a database (master password = `ODOO_ADMIN_PASSWD` from `.env`)
 3. Apps → Update Apps List if you added modules under `addons/`
 
 ## 6. pgAdmin
 
-1. Open http://127.0.0.1:5050
+1. Open http://127.0.0.1:5050 (or `PGADMIN_PORT` from `.env`)
 2. Log in with `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`
 3. Register a server:
 
@@ -177,6 +179,15 @@ Config and addons stay on the host:
 | `config/requirements.txt` | Extra Python packages (installed at image build) |
 | `addons/` | Custom modules |
 | `fonts/` | Optional custom fonts |
+
+### Legacy host `./database`
+
+Older stacks bind-mounted `./database` for Postgres. This stack uses named volume `db_data` only. The folder is gitignored and unused. Safe to delete after you have migrated or no longer need that data:
+
+```bash
+# only if you do not need the old host DB files
+sudo rm -rf database
+```
 
 ## 10. Config notes
 
