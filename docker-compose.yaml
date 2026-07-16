@@ -115,22 +115,32 @@ services:
       retries: 10
     networks:
       - intranet
-  # adminer:
-  #   image: adminer
-  #   networks:
-  #     - intranet
 
-  # mailpit:
-  #   image: "axllent/mailpit:latest"
-  #   ports:
-  #     - "${FORWARD_MAILPIT_PORT:-1025}:1025"
-  #     - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
-  #   networks:
-  #     - intranet
+  # Local-only DB UI (not exposed via Traefik / public interfaces)
+  pgadmin:
+    restart: always
+    image: dpage/pgadmin4:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?set PGADMIN_DEFAULT_EMAIL in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set PGADMIN_DEFAULT_PASSWORD in .env}
+      # Disable master-password prompt for saved servers (local tooling)
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      # Loopback only — not reachable from other hosts
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - intranet
+    # No Traefik labels on purpose
 
 volumes:
   odoo_data:
   db_data:
+  pgadmin_data:
 
 networks:
   intranet:
