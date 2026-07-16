@@ -1,30 +1,185 @@
-# Installing Odoo (Supports multiple Odoo instances on one server).
+# Odoo 18 Docker Compose
 
-Based on [https://github.com/minhng92/odoo-17-docker-compose](https://github.com/minhng92/odoo-17-docker-compose)
+Stack: Odoo 18 (built image), PostgreSQL 17, pgAdmin (localhost). Traefik is optional.
 
-## Quick Installation
+## Requirements
 
-Clone the repository
+- Docker Engine
+- Docker Compose v2
+- Git
+
+## 1. Clone
 
 ```bash
-git clone --branch 17.0 --depth=1 https://GITPAP@github.com/LIDALabs/odoo-docker-compose.git
+git clone --branch 18.0 git@github.com:LIDALabs/lidoo-docker-compose.git
+cd lidoo-docker-compose
 ```
 
-## Fixes
-    ```bash
-    chmod -R 777 addons
-    chmod -R 777 config
-    chmod -R 777 postgresql
-    ```
+## 2. Create `.env`
 
-## Comandos útiles
-
-Copiar el archivo `.env`, reemplazar el dominio (debe reemplazar `<DOMINIO>`, por ejemplo por `empresa.lidalabs.com` antes de correr el comando) y ejecutar el script de configuración.
-```shell
-cp .env.example .env && sed -i 's#odoo.example.com#<DOMINIO>#' .env && bash pre.sh `pwd`
+```bash
+cp .env.example .env
 ```
 
-Copiar el archivo de configuración para la rotación de logs. Este comando **no** copia el archivo a 
-```shell
-cp logrotate/conf/odoo.conf.example odoo.logrotate.conf && sed -i 's#$ODOODIR#'`pwd`'#' .env odoo.logrotate.conf && sed -i 's#$ODOOUSER#<ODOOUSR>#g' odoo.logrotate.conf
+Edit `.env` and set at least:
+
+| Variable | Purpose |
+|----------|---------|
+| `POSTGRES_USER` | Postgres + Odoo DB user |
+| `POSTGRES_PASSWORD` | Postgres + Odoo DB password |
+| `ODOO_ADMIN_PASSWD` | Odoo database manager master password (`/web/database`) |
+| `PGADMIN_DEFAULT_EMAIL` | pgAdmin login email |
+| `PGADMIN_DEFAULT_PASSWORD` | pgAdmin login password |
+| `PGADMIN_PORT` | pgAdmin host port (default `5050`) |
+
+Do not commit `.env`.
+
+## 3. Add custom modules (optional)
+
+Place modules **flat** under `addons/`:
+
+```text
+addons/
+  my_module/
+    __manifest__.py
+    ...
 ```
+
+Not nested as `addons/group/my_module/`.
+
+## 4. Start (local, no Traefik)
+
+```bash
+docker compose up -d --build
+```
+
+| Service | URL / port |
+|---------|------------|
+| Odoo | http://localhost:10018 |
+| Odoo gevent | host port `20018` → container `8072` |
+| pgAdmin | http://127.0.0.1:5050 |
+
+The image `lidoo-odoo:18` is built from `Dockerfile` (Odoo 18 + `config/requirements.txt`). Rebuild after changing requirements:
+
+```bash
+docker compose build --no-cache odoo
+docker compose up -d
+```
+
+## 5. First Odoo use
+
+1. Open http://localhost:10018
+2. Create a database (master password = `ODOO_ADMIN_PASSWD` from `.env`)
+3. Apps → Update Apps List if you added modules under `addons/`
+
+## 6. pgAdmin
+
+1. Open http://127.0.0.1:5050
+2. Log in with `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`
+3. Register a server:
+
+| Field | Value |
+|-------|--------|
+| Host | `db` |
+| Port | `5432` |
+| Username | `POSTGRES_USER` |
+| Password | `POSTGRES_PASSWORD` |
+
+pgAdmin is bound to `127.0.0.1` only (not public, not Traefik).
+
+## 7. Traefik (optional)
+
+Use only when you need HTTPS and a public hostname.
+
+### 7.1 Extra `.env` values
+
+| Variable | Purpose |
+|----------|---------|
+| `ODOO_HOSTNAME` | Public host for Odoo |
+| `LETS_ENCRYPT_CONTACT_EMAIL` | Let's Encrypt account email |
+| `TRAEFIK_HOSTNAME` | Traefik dashboard host |
+| `TRAEFIK_BASIC_AUTH` | Dashboard basic auth (`user:hash` from htpasswd) |
+
+Generate basic auth:
+
+```bash
+htpasswd -nbB admin 'your-dashboard-password'
+```
+
+Put the result in `TRAEFIK_BASIC_AUTH`. If `$` is eaten by Compose, escape each `$` as `$$` in `.env`.
+
+Optional:
+
+| Variable | Default |
+|----------|---------|
+| `TRAEFIK_HTTP_PORT` | `80` |
+| `TRAEFIK_HTTPS_PORT` | `443` |
+| `TRAEFIK_NETWORK_NAME` | `traefik-public` |
+| `TRAEFIK_NETWORK_EXTERNAL` | `false` (Compose creates the network) |
+
+Set `TRAEFIK_NETWORK_EXTERNAL=true` only if `traefik-public` already exists on the host.
+
+### 7.2 DNS and ports
+
+- Point `ODOO_HOSTNAME` (and `TRAEFIK_HOSTNAME` if used) to this server
+- Open host ports `80` and `443` (or the ports you set)
+
+### 7.3 Start with Traefik
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml up -d --build
+```
+
+| Endpoint | Target |
+|----------|--------|
+| `https://$ODOO_HOSTNAME` | Odoo `:8069` |
+| `/websocket`, `/longpolling` | Odoo gevent `:8072` |
+| `https://$TRAEFIK_HOSTNAME` | Traefik dashboard (basic auth) |
+
+## 8. Day-to-day commands
+
+```bash
+# Status
+docker compose ps
+
+# Logs
+docker compose logs -f odoo
+docker compose logs -f db
+
+# Stop
+docker compose down
+
+# Stop and remove named volumes (destroys DB + filestore + pgAdmin data)
+docker compose down -v
+```
+
+With Traefik, pass the same `-f` files:
+
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml ps
+docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml down
+```
+
+## 9. Data volumes
+
+| Volume | Content |
+|--------|---------|
+| `odoo_data` | Odoo `data_dir` (sessions, filestore) |
+| `db_data` | PostgreSQL data |
+| `pgadmin_data` | pgAdmin settings |
+| `traefik_letsencrypt` | ACME certs (Traefik only) |
+
+Config and addons stay on the host:
+
+| Path | Role |
+|------|------|
+| `config/odoo.conf` | Odoo options (no secrets; master password from `.env`) |
+| `config/requirements.txt` | Extra Python packages (installed at image build) |
+| `addons/` | Custom modules |
+| `fonts/` | Optional custom fonts |
+
+## 10. Config notes
+
+- Secrets: only in `.env` (`POSTGRES_*`, `ODOO_ADMIN_PASSWD`, `PGADMIN_*`, Traefik auth)
+- `config/odoo.conf`: `data_dir = /var/lib/odoo`, addons path includes `/mnt/extra_addons`
+- Do not put a real `admin_passwd` in git; it is injected at container start from `ODOO_ADMIN_PASSWD`
