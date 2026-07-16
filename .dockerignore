@@ -8,3 +8,8 @@ logrotate
 *.md
 docker-compose*.yaml
 Makefile
+
+# Bind-mounted at runtime, never needed in the image build context.
+addons
+fonts
+config/odoo.old.conf
