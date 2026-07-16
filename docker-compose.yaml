@@ -1,7 +1,4 @@
 services:
-  # One Odoo process can serve multiple Postgres DBs (same container).
-  # Default: single DB. Rare multi-DB-by-subdomain: set dbfilter in config/odoo.conf
-  # (see comments there + README). No extra odoo service is required.
   odoo:
     restart: always
     build: .
@@ -13,14 +10,10 @@ services:
       - "${ODOO_HTTP_PORT:-10018}:8069"
       - "${ODOO_GEVENT_PORT:-20018}:8072"
     environment:
-      # Official entrypoint → Odoo db_host / db_user / db_password
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
       PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      # Master password injected into runtime conf (see entrypoint below)
       ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
-    # Run setup as root so odoo_logs volume is writable, then drop to odoo via setpriv.
-    # Odoo does not read admin_passwd from env; inject into runtime conf first.
     user: root
     entrypoint: ["/bin/bash", "-c"]
     command:
@@ -38,11 +31,8 @@ services:
         exec setpriv --reuid=odoo --regid=odoo --init-groups -- /entrypoint.sh odoo
 
     volumes:
-      # Mount only the conf file so /etc/odoo is not a host bind for sessions/logs
       - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
-      # Named volume for data_dir (sessions, filestore)
       - odoo_data:/var/lib/odoo
-      # Error/critical server log (see logfile in config/odoo.conf)
       - odoo_logs:/var/log/odoo
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
@@ -56,8 +46,6 @@ services:
       - intranet
     # Traefik labels live only in docker-compose.traefik.yaml (optional overlay)
 
-  # Single Postgres instance. Holds one or many Odoo databases (no second db service).
-  # Host path ./database is legacy and unused; data lives in named volume db_data.
   db:
     restart: always
     image: postgres:17
@@ -77,7 +65,6 @@ services:
     networks:
       - intranet
 
-  # Local-only DB UI (not exposed via Traefik / public interfaces)
   pgadmin:
     restart: always
     image: dpage/pgadmin4:latest
