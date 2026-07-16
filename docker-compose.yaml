@@ -32,8 +32,8 @@ services:
       #- /etc/localtime:/etc/localtime:ro
       # Mount only the conf file so /etc/odoo is not a host bind for sessions/logs
       - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
-      # Host path for data_dir (sessions, filestore) — matches odoo.conf data_dir
-      - /var/lib/odoo:/var/lib/odoo
+      # Named volume for data_dir (sessions, filestore)
+      - odoo_data:/var/lib/odoo
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
     healthcheck:
@@ -104,9 +104,10 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_USER: ${POSTGRES_USER:-odoo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      PGDATA: '/var/lib/postgresql/data/pgdata'
+      PGDATA: /var/lib/postgresql/data
     volumes:
-      - ./database:/var/lib/postgresql/data
+      # Named volume for Postgres data (PGDATA)
+      - db_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres" ]
       interval: 5s
@@ -126,6 +127,10 @@ services:
   #     - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025"
   #   networks:
   #     - intranet
+
+volumes:
+  odoo_data:
+  db_data:
 
 networks:
   intranet:
