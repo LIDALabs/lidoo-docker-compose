@@ -8,6 +8,13 @@
 #   docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml up -d --build
 #
 # pgAdmin stays on 127.0.0.1 only and is never routed by Traefik.
+#
+# Multi-DB by subdomain (RARE — see README + config/odoo.conf):
+#   Default labels use a single Host(${ODOO_HOSTNAME}).
+#   For sub1.domain.com + sub2.domain.com → change Host() rules below to e.g.:
+#     Host(`sub1.domain.com`) || Host(`sub2.domain.com`)
+#   Apply the same Host rule on app (8069) AND websocket/longpolling (8072).
+#   DNS + TLS for each host (or wildcard). Odoo: dbfilter = ^%d$
 
 services:
   odoo:
@@ -19,6 +26,7 @@ services:
       - traefik.docker.network=traefik-public
 
       # --- HTTP app (redirect to HTTPS) ---
+      # Single-host default. Multi-subdomain: Host(`a.example.com`) || Host(`b.example.com`)
       - traefik.http.routers.odoo-http.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
       - traefik.http.routers.odoo-http.entrypoints=web
       - traefik.http.routers.odoo-http.middlewares=redirect-to-https
@@ -32,6 +40,7 @@ services:
       - traefik.http.routers.odoo-https.middlewares=gzip,sslheader
 
       # --- Websocket + longpolling (gevent :8072) ---
+      # Keep the same Host() rule as the app routers above.
       - traefik.http.routers.odoo-im-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
       - traefik.http.routers.odoo-im-http.entrypoints=web
       - traefik.http.routers.odoo-im-http.middlewares=redirect-to-https

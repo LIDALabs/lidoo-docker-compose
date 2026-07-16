@@ -183,3 +183,54 @@ Config and addons stay on the host:
 - Secrets: only in `.env` (`POSTGRES_*`, `ODOO_ADMIN_PASSWD`, `PGADMIN_*`, Traefik auth)
 - `config/odoo.conf`: `data_dir = /var/lib/odoo`, addons path includes `/mnt/extra_addons`
 - Do not put a real `admin_passwd` in git; it is injected at container start from `ODOO_ADMIN_PASSWD`
+
+## 11. Multi-DB by subdomain (rare, optional)
+
+Default is **one database**. Only some servers use several DBs on **one** Odoo, selected by subdomain (`dbfilter`).
+
+Example: `sub1.domain.com` → DB `sub1`, `sub2.domain.com` → DB `sub2`.
+
+### Odoo
+
+1. Create DBs named like the subdomain: `sub1`, `sub2`
+2. In `config/odoo.conf` uncomment/set:
+   ```ini
+   dbfilter = ^%d$
+   ```
+3. Optional prod: `list_db = False`
+4. Keep `proxy_mode = True` (already set)
+5. Restart:
+   ```bash
+   docker compose up -d
+   ```
+
+### DNS
+
+6. `sub1.domain.com` → server IP  
+7. `sub2.domain.com` → server IP  
+
+### Traefik (if public)
+
+8. Change Host rules in `docker-compose.traefik.yaml` to cover **all** hosts, e.g.:
+   ```text
+   Host(`sub1.domain.com`) || Host(`sub2.domain.com`)
+   ```
+9. Use that same Host rule on:
+   - app → `8069`
+   - `/websocket` + `/longpolling` → `8072`
+10. TLS for both hosts (or `*.domain.com`)
+11. Redeploy:
+    ```bash
+    docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml up -d
+    ```
+
+### Check
+
+12. `https://sub1.domain.com` → DB `sub1`  
+13. `https://sub2.domain.com` → DB `sub2`  
+
+### Rules
+
+- DB name = first subdomain label (`%d`)
+- One Odoo service, one Postgres service — no second containers
+- pgAdmin unchanged: host `db`, port `5432`

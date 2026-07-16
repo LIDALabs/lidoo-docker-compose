@@ -1,4 +1,7 @@
 services:
+  # One Odoo process can serve multiple Postgres DBs (same container).
+  # Default: single DB. Rare multi-DB-by-subdomain: set dbfilter in config/odoo.conf
+  # (see comments there + README). No extra odoo service is required.
   odoo:
     restart: always # run as a service
     build: .
