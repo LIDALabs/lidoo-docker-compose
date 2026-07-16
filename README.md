@@ -121,6 +121,11 @@ Optional:
 
 Set `TRAEFIK_NETWORK_EXTERNAL=true` only if `traefik-public` already exists on the host.
 
+> The Traefik dashboard is served on `TRAEFIK_HOSTNAME` behind HTTPS + basic auth
+> only, and `/var/run/docker.sock` is mounted read-only into Traefik. For tighter
+> setups, restrict the dashboard to an internal network / IP allowlist or don't
+> route `api@internal` publicly.
+
 ### 7.2 DNS and ports
 
 - Point `ODOO_HOSTNAME` (and `TRAEFIK_HOSTNAME` if used) to this server
@@ -167,18 +172,37 @@ docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml down
 | Volume | Content |
 |--------|---------|
 | `odoo_data` | Odoo `data_dir` (sessions, filestore) |
-| `odoo_logs` | Odoo error log at `/var/log/odoo/odoo-server.log` |
+| `odoo_logs` | Odoo error log (ERROR/CRITICAL only) at `/var/log/odoo/odoo-server.log` |
 | `db_data` | PostgreSQL data |
 | `pgadmin_data` | pgAdmin settings |
 | `traefik_letsencrypt` | ACME certs (Traefik only) |
 
-Tail the Odoo error log:
+### Logs
+
+Full Odoo output (`log_level = info`) goes to the container's stdout:
+
+```bash
+docker compose logs -f odoo
+```
+
+The startup script also splits that stream so `/var/log/odoo/odoo-server.log`
+keeps **only ERROR/CRITICAL** records (with tracebacks) for quick triage:
 
 ```bash
 docker compose exec odoo tail -f /var/log/odoo/odoo-server.log
 ```
 
-`log_level = error` in `config/odoo.conf` → only ERROR and CRITICAL in that file.
+### PostgreSQL upgrades
+
+`db_data` is initialized by the `postgres:17` image. Bumping the tag to a new
+**major** (e.g. `postgres:18`) will not start on an old data directory — dump
+and restore first:
+
+```bash
+docker compose exec db pg_dumpall -U "$POSTGRES_USER" > backup.sql   # before the bump
+# ...change the image tag, `docker compose down -v db`, up again, then restore:
+# cat backup.sql | docker compose exec -T db psql -U "$POSTGRES_USER"
+```
 
 Config and addons stay on the host:
 
@@ -203,6 +227,8 @@ sudo rm -rf database
 - Secrets: only in `.env` (`POSTGRES_*`, `ODOO_ADMIN_PASSWD`, `PGADMIN_*`, Traefik auth)
 - `config/odoo.conf`: `data_dir = /var/lib/odoo`, addons path includes `/mnt/extra_addons`
 - Do not put a real `admin_passwd` in git; it is injected at container start from `ODOO_ADMIN_PASSWD`
+- `proxy_mode` is injected from `ODOO_PROXY_MODE` (`False` locally, `True` under the Traefik overlay). Do not set it in `odoo.conf` — with `proxy_mode` on and no proxy, clients can spoof `X-Forwarded-*`
+- `workers = 2` runs Odoo in prefork mode so the gevent worker serves `/websocket` and `/longpolling` on `:8072`. Tune to the host (≈ `2 × CPU + 1`)
 
 ## 11. Multi-DB by subdomain (rare, optional)
 
@@ -218,7 +244,7 @@ Example: `sub1.domain.com` → DB `sub1`, `sub2.domain.com` → DB `sub2`.
    dbfilter = ^%d$
    ```
 3. Optional prod: `list_db = False`
-4. Keep `proxy_mode = True` (already set)
+4. `proxy_mode` turns on automatically with the Traefik overlay (`ODOO_PROXY_MODE`)
 5. Restart:
    ```bash
    docker compose up -d
