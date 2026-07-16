@@ -43,58 +43,7 @@ services:
       retries: 30
     networks:
       - intranet
-
-    labels:
-      - traefik.enable=true
-      #----------------------------------------------- routers for: odoo --------------------------------------------------
-      # http
-      - traefik.http.routers.odoo-http.rule=Host(`${ODOO_HOSTNAME}`)
-      - traefik.http.routers.odoo-http.entrypoints=web
-      - traefik.http.routers.odoo-http.middlewares=redirect-to-https
-      - traefik.http.routers.odoo-http.service=odoo-service
-      # https
-      - traefik.http.routers.odoo-https.rule=Host(`${ODOO_HOSTNAME}`)
-      - traefik.http.routers.odoo-https.entrypoints=websecure
-      - traefik.http.routers.odoo-https.service=odoo-service
-      - traefik.http.routers.odoo-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.odoo-https.middlewares=gzip,sslheader
-      #----------------------------- routes for: odoo/web/database || odoo/website/info  -----------------------------
-      # http 
-      - traefik.http.routers.odoo-db-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/web/database`) || PathPrefix(`/website/info`))
-      - traefik.http.routers.odoo-db-http.entrypoints=web
-      - traefik.http.routers.odoo-db-http.service=odoo-service
-      - traefik.http.routers.odoo-db-http.middlewares=redirect-to-https
-      - traefik.http.services.odoo-db-http.loadbalancer.server.port=8069
-      # https 
-      - traefik.http.routers.odoo-db-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/web/database`) || PathPrefix(`/website/info`))
-      - traefik.http.routers.odoo-db-https.entrypoints=websecure
-      - traefik.http.routers.odoo-db-https.service=odoo-service
-      - traefik.http.routers.odoo-db-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.odoo-db-https.middlewares=gzip,sslheader
-      - traefik.http.services.odoo-db-https.loadbalancer.server.port=8069
-      #---------------------------------------- routes for: odoo/longpolling ------------------------------------------------
-      # http 
-      - traefik.http.routers.odoo-im-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/longpolling`))
-      - traefik.http.routers.odoo-im-http.entrypoints=web
-      - traefik.http.routers.odoo-im-http.middlewares=redirect-to-https
-      - traefik.http.routers.odoo-im-http.service=odoo-im-service
-      # https 
-      - traefik.http.routers.odoo-im-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/longpolling`))
-      - traefik.http.routers.odoo-im-https.entrypoints=websecure
-      - traefik.http.routers.odoo-im-https.service=odoo-im-service
-      - traefik.http.routers.odoo-im-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.odoo-im-https.middlewares=gzip,sslheader
-
-      #====================================================== services ===========================================================
-      - traefik.http.services.odoo-service.loadbalancer.server.port=8069
-      - traefik.http.services.odoo-im-service.loadbalancer.server.port=8072
-
-      #===================================================== middlewares =========================================================
-      - traefik.http.middlewares.gzip.compress=true
-      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
-      - traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https
-      # - traefik.http.middlewares.limit.buffering.memRequestBodyBytes=20971520
-      # - traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=20971520
+    # Traefik labels live only in docker-compose.traefik.yaml (optional overlay)
 
   db:
     restart: always # run as a service

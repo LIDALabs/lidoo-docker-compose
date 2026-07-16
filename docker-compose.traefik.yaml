@@ -1,72 +1,114 @@
-# PARA MULTIPLES INSTANCIAS: DESCOMENTAR
-# networks:
-#   traefik-public:
-#     external: true
-# PARA MULTIPLES INSTANCIAS: DESCOMENTAR
+# Optional Traefik overlay (TLS reverse proxy).
+#
+# Local (no Traefik):
+#   docker compose up -d --build
+#
+# With Traefik:
+#   # set ODOO_HOSTNAME, LETS_ENCRYPT_CONTACT_EMAIL, TRAEFIK_* in .env
+#   docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml up -d --build
+#
+# pgAdmin stays on 127.0.0.1 only and is never routed by Traefik.
 
 services:
+  odoo:
+    networks:
+      - intranet
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+
+      # --- HTTP app (redirect to HTTPS) ---
+      - traefik.http.routers.odoo-http.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
+      - traefik.http.routers.odoo-http.entrypoints=web
+      - traefik.http.routers.odoo-http.middlewares=redirect-to-https
+      - traefik.http.routers.odoo-http.service=odoo-service
+
+      # --- HTTPS app ---
+      - traefik.http.routers.odoo-https.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
+      - traefik.http.routers.odoo-https.entrypoints=websecure
+      - traefik.http.routers.odoo-https.service=odoo-service
+      - traefik.http.routers.odoo-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.odoo-https.middlewares=gzip,sslheader
+
+      # --- Websocket + longpolling (gevent :8072) ---
+      - traefik.http.routers.odoo-im-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-http.entrypoints=web
+      - traefik.http.routers.odoo-im-http.middlewares=redirect-to-https
+      - traefik.http.routers.odoo-im-http.service=odoo-im-service
+
+      - traefik.http.routers.odoo-im-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-https.entrypoints=websecure
+      - traefik.http.routers.odoo-im-https.service=odoo-im-service
+      - traefik.http.routers.odoo-im-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.odoo-im-https.middlewares=gzip,sslheader
+
+      # --- Services ---
+      - traefik.http.services.odoo-service.loadbalancer.server.port=8069
+      - traefik.http.services.odoo-im-service.loadbalancer.server.port=8072
+
+      # --- Shared middlewares (single definition; do not re-declare on each router overwrite) ---
+      - traefik.http.middlewares.gzip.compress=true
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true
+      - traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https
+
   traefik:
-    restart: always # run as a service
-    image: "traefik:v3"
-    # container_name: "traefik"
-    # env_file: .env
-    # environment:
-    #   - UID=2000
-    #   - GID=2000
+    restart: always
+    image: traefik:v3
+    depends_on:
+      - odoo
     ports:
-      - "80:80"
-      - "443:443"
+      - "${TRAEFIK_HTTP_PORT:-80}:80"
+      - "${TRAEFIK_HTTPS_PORT:-443}:443"
     command:
-      # Enable dashboard
-      # - --api.insecure=true
       - --api.dashboard=true
-      # - --api.debug=true
       - --log=true
-      - --log.level=INFO
-      # Docker configuration
+      - --log.level=${TRAEFIK_LOG_LEVEL:-INFO}
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=traefik-public
-      # Configure entrypoint
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      # SSL configuration
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
-      - --certificatesresolvers.letsencrypt.acme.email=${LETS_ENCRYPT_CONTACT_EMAIL:-soporte@lidalabs.com}
+      - --certificatesresolvers.letsencrypt.acme.email=${LETS_ENCRYPT_CONTACT_EMAIL:?set LETS_ENCRYPT_CONTACT_EMAIL in .env}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
-      # Global HTTP -> HTTPS
-      #- --entrypoints.web.http.redirections.entryPoint.to=websecure
-      #- --entrypoints.web.http.redirections.entryPoint.scheme=https
     networks:
       - traefik-public
     volumes:
-      - "./docker/volumes/traefik/letsencrypt:/letsencrypt"
-      # So that Traefik can listen to the Docker events
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    labels:  
+      - traefik_letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
       - traefik.enable=true
-      - traefik.http.services.traefik.loadbalancer.server.port=8080
+      - traefik.docker.network=traefik-public
 
-      # HTTP configuration
-      - traefik.http.routers.traefik-http.rule=Host(`${TRAEFIK_HOSTNAME:-traefik-ui.local}`)
+      # Dashboard HTTP → HTTPS (single middleware chain; do not set middlewares twice)
+      - traefik.http.routers.traefik-http.rule=Host(`${TRAEFIK_HOSTNAME:-traefik.localhost}`)
       - traefik.http.routers.traefik-http.entrypoints=web
       - traefik.http.routers.traefik-http.service=api@internal
       - traefik.http.routers.traefik-http.middlewares=redirect-to-https
-      - traefik.http.routers.traefik-http.middlewares=traefik-auth
-      - traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$OeVr9Tuf$$JOHE1yK6PQLWbUA2WtwQN0
 
-      # HTTPS configuration
-      - traefik.http.routers.traefik-https.rule=Host(`${TRAEFIK_HOSTNAME:-traefik-ui.local}`)
+      - traefik.http.routers.traefik-https.rule=Host(`${TRAEFIK_HOSTNAME:-traefik.localhost}`)
       - traefik.http.routers.traefik-https.entrypoints=websecure
       - traefik.http.routers.traefik-https.tls=true
-      - traefik.http.routers.traefik-https.tls.options=default
       - traefik.http.routers.traefik-https.tls.certresolver=letsencrypt
       - traefik.http.routers.traefik-https.service=api@internal
-      
-      - traefik.http.routers.traefik-https.middlewares=gzip
+      # One chain only: auth + gzip (previous file overwrote middlewares with a second label)
+      - traefik.http.routers.traefik-https.middlewares=traefik-auth,gzip
+
+      - traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_BASIC_AUTH:?set TRAEFIK_BASIC_AUTH in .env (htpasswd user:hash)}
       - traefik.http.middlewares.gzip.compress=true
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true
+
+volumes:
+  traefik_letsencrypt:
+
 networks:
+  # Created by this project by default (local / single-stack).
+  # For a shared Traefik across many stacks, create the network once and set:
+  #   TRAEFIK_NETWORK_EXTERNAL=true
   traefik-public:
-    external: true
+    name: ${TRAEFIK_NETWORK_NAME:-traefik-public}
+    external: ${TRAEFIK_NETWORK_EXTERNAL:-false}
