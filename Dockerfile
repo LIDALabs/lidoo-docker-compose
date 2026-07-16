@@ -10,4 +10,8 @@ RUN pip3 install --break-system-packages --ignore-installed --no-cache-dir \
         -r /tmp/requirements.txt \
     && rm -f /tmp/requirements.txt
 
+# Error log directory (bind/volume mounted at runtime; ownership for user odoo)
+RUN mkdir -p /var/log/odoo \
+    && chown odoo:odoo /var/log/odoo
+
 USER odoo

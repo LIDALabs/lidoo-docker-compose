@@ -36,6 +36,8 @@ services:
       - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
       # Named volume for data_dir (sessions, filestore)
       - odoo_data:/var/lib/odoo
+      # Error/critical server log (see logfile in config/odoo.conf)
+      - odoo_logs:/var/log/odoo
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
     healthcheck:

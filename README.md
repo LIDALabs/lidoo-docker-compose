@@ -167,9 +167,18 @@ docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml down
 | Volume | Content |
 |--------|---------|
 | `odoo_data` | Odoo `data_dir` (sessions, filestore) |
+| `odoo_logs` | Odoo error log at `/var/log/odoo/odoo-server.log` |
 | `db_data` | PostgreSQL data |
 | `pgadmin_data` | pgAdmin settings |
 | `traefik_letsencrypt` | ACME certs (Traefik only) |
+
+Tail the Odoo error log:
+
+```bash
+docker compose exec odoo tail -f /var/log/odoo/odoo-server.log
+```
+
+`log_level = error` in `config/odoo.conf` → only ERROR and CRITICAL in that file.
 
 Config and addons stay on the host:
 
