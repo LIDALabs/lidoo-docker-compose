@@ -19,8 +19,9 @@ services:
       PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       # Master password injected into runtime conf (see entrypoint below)
       ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
-    # Odoo does not read admin_passwd from env; build a runtime conf then use the
-    # official image entrypoint (wait-for-db + db CLI args).
+    # Run setup as root so odoo_logs volume is writable, then drop to odoo via setpriv.
+    # Odoo does not read admin_passwd from env; inject into runtime conf first.
+    user: root
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
@@ -30,7 +31,12 @@ services:
         export ODOO_RC=/tmp/odoo.conf
         grep -v -E '^[[:space:]]*admin_passwd[[:space:]]*=' /etc/odoo/odoo.conf > "$$ODOO_RC"
         printf 'admin_passwd = %s\n' "$$ODOO_ADMIN_PASSWD" >> "$$ODOO_RC"
-        exec /entrypoint.sh odoo
+        chown odoo:odoo "$$ODOO_RC"
+        mkdir -p /var/log/odoo
+        chown odoo:odoo /var/log/odoo
+        # Official entrypoint as user odoo (uid/gid from image)
+        exec setpriv --reuid=odoo --regid=odoo --init-groups -- /entrypoint.sh odoo
+
     volumes:
       # Mount only the conf file so /etc/odoo is not a host bind for sessions/logs
       - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
@@ -91,6 +97,7 @@ services:
 
 volumes:
   odoo_data:
+  odoo_logs:
   db_data:
   pgadmin_data:
 
