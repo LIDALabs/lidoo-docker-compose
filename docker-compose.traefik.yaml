@@ -18,6 +18,9 @@
 
 services:
   odoo:
+    # Behind Traefik, Odoo sits behind a trusted proxy that sets X-Forwarded-*.
+    environment:
+      ODOO_PROXY_MODE: "True"
     networks:
       - intranet
       - traefik-public

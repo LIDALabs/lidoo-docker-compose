@@ -14,6 +14,8 @@ services:
       USER: ${POSTGRES_USER:-odoo}
       PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
+      # Only safe behind a trusted proxy; the Traefik overlay overrides this to True.
+      ODOO_PROXY_MODE: ${ODOO_PROXY_MODE:-False}
     # Runs as root to fix volume ownership + inject secrets, then drops to `odoo`
     # (see docker/odoo-start.sh, baked into the image).
     user: root
