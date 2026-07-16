@@ -14,6 +14,7 @@ services:
       USER: ${POSTGRES_USER:-odoo}
       PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
+    # Setup as root (volume ownership), then drop to odoo for the server process.
     user: root
     entrypoint: ["/bin/bash", "-c"]
     command:
@@ -21,13 +22,21 @@ services:
         set -euo pipefail
         : "$${ODOO_ADMIN_PASSWD:?ODOO_ADMIN_PASSWD must be set}"
         : "$${PASSWORD:?POSTGRES_PASSWORD must be set}"
-        export ODOO_RC=/tmp/odoo.conf
-        grep -v -E '^[[:space:]]*admin_passwd[[:space:]]*=' /etc/odoo/odoo.conf > "$$ODOO_RC"
-        printf 'admin_passwd = %s\n' "$$ODOO_ADMIN_PASSWD" >> "$$ODOO_RC"
+
+        # Writable locations live on named volumes (not /tmp — often not usable).
+        mkdir -p /var/lib/odoo /var/log/odoo
+        chown odoo:odoo /var/lib/odoo /var/log/odoo
+
+        # Runtime conf with secrets; keep off the read-only bind of odoo.conf
+        export ODOO_RC=/var/lib/odoo/odoo.runtime.conf
+        umask 077
+        {
+          grep -v -E '^[[:space:]]*admin_passwd[[:space:]]*=' /etc/odoo/odoo.conf
+          printf 'admin_passwd = %s\n' "$$ODOO_ADMIN_PASSWD"
+        } > "$$ODOO_RC"
         chown odoo:odoo "$$ODOO_RC"
-        mkdir -p /var/log/odoo
-        chown odoo:odoo /var/log/odoo
-        # Official entrypoint as user odoo (uid/gid from image)
+
+        # Official entrypoint as user odoo (uid 100 / gid 101 in odoo:18)
         exec setpriv --reuid=odoo --regid=odoo --init-groups -- /entrypoint.sh odoo
 
     volumes:
