@@ -1,0 +1,27 @@
+#!/bin/bash
+# odoo-logsplit <errfile>
+#
+# Reads an Odoo log stream on stdin and, line by line (in real time):
+#   - echoes EVERY line to stdout        -> captured by `docker logs`
+#   - appends only ERROR/CRITICAL records, including their traceback and other
+#     continuation lines, to <errfile>.
+#
+# Odoo line format: "YYYY-MM-DD HH:MM:SS,mmm <pid> <LEVEL> <db> <logger>: <msg>".
+# A line without a leading timestamp is a continuation of the previous record
+# (e.g. a Python traceback) and inherits that record's capture state.
+#
+# A `bash read` loop is used on purpose: awk/stdio block-buffer their input from
+# a pipe and would delay `docker logs` until a buffer fills, whereas `read`
+# delivers each line as soon as its newline arrives.
+errfile=$1
+cap=0
+ts='^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9:,]+ [0-9]+ '
+while IFS= read -r line || [[ -n $line ]]; do
+  printf '%s\n' "$line"
+  if [[ $line =~ ${ts}(ERROR|CRITICAL)\  ]]; then
+    cap=1
+  elif [[ $line =~ ${ts}(DEBUG|INFO|WARNING)\  ]]; then
+    cap=0
+  fi
+  (( cap )) && printf '%s\n' "$line" >> "$errfile"
+done

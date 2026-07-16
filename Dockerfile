@@ -14,8 +14,8 @@ RUN pip3 install --break-system-packages --ignore-installed --no-cache-dir \
 RUN mkdir -p /var/log/odoo \
     && chown odoo:odoo /var/log/odoo
 
-# Startup command (root setup -> privilege drop to odoo).
-COPY docker/odoo-start.sh /usr/local/bin/odoo-start.sh
-RUN chmod 0755 /usr/local/bin/odoo-start.sh
+# Startup command (root setup -> privilege drop to odoo) + log splitter.
+COPY docker/odoo-start.sh docker/odoo-logsplit /usr/local/bin/
+RUN chmod 0755 /usr/local/bin/odoo-start.sh /usr/local/bin/odoo-logsplit
 
 USER odoo
