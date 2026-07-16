@@ -1,2 +1,32 @@
+# Secrets / local env (never commit)
 .env
+.env.local
+.env.*.local
+!.env.example
+
+# Legacy host Postgres data (pre named volume db_data)
+database/
 postgresql/
+
+# Local / runtime noise
+*.log
+odoo-server.log
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+*.code-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Optional local overrides (if operators create them)
+config/odoo.conf.local
+docker-compose.override.yaml
+docker-compose.override.yml

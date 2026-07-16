@@ -1,4 +1,4 @@
+# Runtime artifacts if anything is ever written under config/
 odoo-server.log
-addons/
 sessions/
 filestore/
