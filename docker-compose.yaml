@@ -9,9 +9,24 @@ services:
       - "10018:8069"
       - "20018:8072"
     environment:
+      # Official entrypoint → Odoo db_host / db_user / db_password
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
-      PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
+      PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      # Master password injected into runtime conf (see entrypoint below)
+      ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
+    # Odoo does not read admin_passwd from env; build a runtime conf then use the
+    # official image entrypoint (wait-for-db + db CLI args).
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        : "$${ODOO_ADMIN_PASSWD:?ODOO_ADMIN_PASSWD must be set}"
+        : "$${PASSWORD:?POSTGRES_PASSWORD must be set}"
+        export ODOO_RC=/tmp/odoo.conf
+        grep -v -E '^[[:space:]]*admin_passwd[[:space:]]*=' /etc/odoo/odoo.conf > "$$ODOO_RC"
+        printf 'admin_passwd = %s\n' "$$ODOO_ADMIN_PASSWD" >> "$$ODOO_RC"
+        exec /entrypoint.sh odoo
     volumes:
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
@@ -86,9 +101,9 @@ services:
     image: postgres:17
     environment:
       POSTGRES_DB: postgres
-      PGPASSWORD: '${POSTGRES_PASSWORD:-supersecret}'
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_USER: ${POSTGRES_USER:-odoo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       PGDATA: '/var/lib/postgresql/data/pgdata'
     volumes:
       - ./database:/var/lib/postgresql/data
