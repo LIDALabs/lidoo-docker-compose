@@ -20,6 +20,7 @@
 - All "today"/hour math uses `America/Caracas` (spec B11/C19).
 - TLS verification stays ON, against the bundled `tools/certs/bcv_chain.pem`. Never `verify=False`, never `disable_warnings` (spec B15/C24).
 - Code, comments, commit messages in English; user-visible strings in the module stay Spanish like the existing ones. Conventional commits, no AI attribution.
+- **USD-only UI (spec D8):** keep the multi-currency fetch/store, but the wizard and log surface USD only. `_store_rate` stores non-USD rates solely for currencies already active in the DB. Do NOT add EUR/CNY/RUB/TRY fields to `bcv.rate.wizard` or `bcv.rate.log`.
 - All l10n_ve work happens INSIDE the submodule repo `/home/moi/Documentos/odoo-docker-dev/l10n_ve` (branch `feature/bcv-rate-resilience` off `17.0-lida`). Parent repo is NOT committed by this plan.
 - Tests run with: `docker compose run --rm odoo17 odoo -d test_bcv -i l10n_ve_currency_rate_live -u l10n_ve_currency_rate_live --test-tags bcv_rate --stop-after-init` (from `/home/moi/Documentos/odoo-docker-dev`; the `odoo17` service already carries DB env config). Expected pass output ends with `0 failed, 0 error(s)`.
 

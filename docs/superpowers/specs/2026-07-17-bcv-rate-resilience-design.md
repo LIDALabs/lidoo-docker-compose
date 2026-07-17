@@ -23,6 +23,7 @@ The BCV rate feature has three recurring failures:
 | D5 | **Fallback never writes rate rows.** When BCV is unreachable, the last stored rate already governs via `name <= date`; writing the old value under today's date only falsifies history. |
 | D6 | **Fecha Valor is the banking calendar.** No holiday table: if BCV published no rate dated D, then D is not a banking day. Weekend/holiday flags (`can_update_habil_days`) are removed. |
 | D7 | Deliver on **both 17 and 18** branches of the submodule from the start. |
+| D8 | **USD is the only currency surfaced in the module UI** (wizard + log). The multi-currency fetch is retained; non-USD rates are stored ONLY for currencies already active in the DB (standard Odoo `search`), never shown in the BCV wizard. Do not add non-USD fields to the wizard/log. |
 
 ## 3. Current-state defects (verified in code)
 
