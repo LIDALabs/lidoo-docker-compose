@@ -65,7 +65,7 @@ Single orchestration + **single write path** for rate rows:
 - `backfill(companies=None)` — detects gaps between last stored Fecha Valor and today; fills real banking days from SMC history. Skipped dates absent from SMC = non-banking days (D6).
 - `_store_rate(company, date, rates)` — the only place that writes `res.currency.rate` (upsert by currency+date+company, writes `inverse_company_rate` for USD, cross rates for EUR/CNY/RUB/TRY when present).
 - All "today" computations use `America/Caracas` explicitly (B11).
-- Anomaly guard: a fetched USD rate deviating more than a configurable % from the last stored one is logged as `suspect` and **not** stored automatically (manual confirmation via wizard); prevents a parsing glitch from poisoning rates.
+- Anomaly guard: a fetched USD rate deviating more than `SUSPECT_THRESHOLD_PERCENT` (module constant, 20%) from the last governing rate is logged as `suspect` and **not** stored automatically (manual-rate flow is the override); prevents a parsing glitch from poisoning rates.
 
 ### 4.3 Cron + Enterprise adapter
 
@@ -77,14 +77,14 @@ Single orchestration + **single write path** for rate rows:
 
 - `default_get`: read-only — shows governing rate (ordered by `name desc`, fixes B5), next published rate if any, source and capture time, staleness warning when governing rate is older than the last banking day. **No network, no writes** (B4).
 - "Consultar BCV" button: calls `sync()`, then reloads state; on total failure shows explicit error block (fixes B6) with the manual-rate escape hatch (existing `group_bcv_manual_rate` flow unchanged).
-- "Actualizar Precios": writes nothing to `res.currency.rate` directly (D5/B1); it only triggers `_update_product_prices()` using the governing rate, and refuses with a clear message when the governing rate is `suspect`/absent. `compute_rate` empty-dict case handled with a `UserError` (B10).
+- "Actualizar Precios": writes nothing to `res.currency.rate` directly (D5/B1); it only triggers `_update_product_prices()` using the governing rate, and refuses with a clear message when no governing rate exists (suspect values never reach storage, so the governing rate is always a confirmed one). `compute_rate` empty-dict case handled with a `UserError` (B10).
 - "Usar última tasa conocida" button removed: under D5 the last known rate **already governs** — the wizard states this instead of pretending to load it.
 - `date` field semantics fixed: shows Fecha Valor (Date), plus separate capture timestamp.
 
 ### 4.5 Log (`bcv.rate.log`)
 
-- New fields: `source` (`homepage` / `smc_history` / `manual`), `fecha_valor` (distinct from query date), `suspect` flag.
-- Wizard opens no longer create rows (B14); one row per real fetch attempt (cron or button).
+- Reuse existing fields: `rate_source` selection gains `smc` (official history source); the existing `date` field IS the Fecha Valor (the tree view already labels it that). New `suspect` boolean; model gains `mail.activity.mixin`.
+- Wizard opens no longer create rows (B14); a row is created only when something happens — a rate stored/changed, an error, or a suspect value. Idempotent no-op fetches log nothing (avoids hourly spam during the afternoon publication window).
 - After N consecutive failed days (default 2), schedule an activity for the accounting group so a human notices layout changes / prolonged outages.
 
 ### 4.6 Settings
@@ -125,7 +125,7 @@ Single orchestration + **single write path** for rate rows:
 
 ## 6. Error handling & observability
 
-- Every fetch attempt → one `bcv.rate.log` row (status, source, error type/message, FV, suspect).
+- One `bcv.rate.log` row per event (rate stored/changed, error, suspect) with status, source, error type/message, FV; silent no-op fetches log nothing.
 - Consecutive-failure activity (§4.5). Log tree view gets `source`/`suspect` columns.
 - No exception may escape the cron; per-company isolation.
 
