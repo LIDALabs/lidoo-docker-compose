@@ -19,8 +19,10 @@
 services:
   odoo:
     # Behind Traefik, Odoo sits behind a trusted proxy that sets X-Forwarded-*.
+    # workers >= 1 is required so gevent listens on :8072 for /websocket.
     environment:
       ODOO_PROXY_MODE: "True"
+      ODOO_WORKERS: ${ODOO_WORKERS:-2}
     networks:
       - intranet
       - traefik-public
@@ -34,6 +36,7 @@ services:
       - traefik.http.routers.odoo-http.entrypoints=web
       - traefik.http.routers.odoo-http.middlewares=redirect-to-https
       - traefik.http.routers.odoo-http.service=odoo-service
+      - traefik.http.routers.odoo-http.priority=1
 
       # --- HTTPS app ---
       - traefik.http.routers.odoo-https.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
@@ -41,19 +44,24 @@ services:
       - traefik.http.routers.odoo-https.service=odoo-service
       - traefik.http.routers.odoo-https.tls.certresolver=letsencrypt
       - traefik.http.routers.odoo-https.middlewares=gzip,sslheader
+      - traefik.http.routers.odoo-https.priority=1
 
       # --- Websocket + longpolling (gevent :8072) ---
       # Keep the same Host() rule as the app routers above.
+      # priority > app routers so these win over the catch-all Host() rule.
+      # No gzip here: compression breaks the WebSocket upgrade.
       - traefik.http.routers.odoo-im-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
       - traefik.http.routers.odoo-im-http.entrypoints=web
       - traefik.http.routers.odoo-im-http.middlewares=redirect-to-https
       - traefik.http.routers.odoo-im-http.service=odoo-im-service
+      - traefik.http.routers.odoo-im-http.priority=100
 
       - traefik.http.routers.odoo-im-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
       - traefik.http.routers.odoo-im-https.entrypoints=websecure
       - traefik.http.routers.odoo-im-https.service=odoo-im-service
       - traefik.http.routers.odoo-im-https.tls.certresolver=letsencrypt
-      - traefik.http.routers.odoo-im-https.middlewares=gzip,sslheader
+      - traefik.http.routers.odoo-im-https.middlewares=sslheader
+      - traefik.http.routers.odoo-im-https.priority=100
 
       # --- Services ---
       - traefik.http.services.odoo-service.loadbalancer.server.port=8069

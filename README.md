@@ -58,8 +58,10 @@ docker compose up -d --build
 | Service | URL / port |
 |---------|------------|
 | Odoo | http://localhost:${ODOO_HTTP_PORT:-10018} |
-| Odoo gevent | host `${ODOO_GEVENT_PORT:-20018}` → container `8072` |
+| Odoo gevent | host `${ODOO_GEVENT_PORT:-20018}` → container `8072` (only when `ODOO_WORKERS` ≥ 1) |
 | pgAdmin | http://127.0.0.1:${PGADMIN_PORT:-5050} |
+
+Local mode uses `ODOO_WORKERS=0` (default): the threaded server handles `/websocket` on the same port as HTTP. You do **not** need to open the gevent port in the browser.
 
 The image `lidoo-odoo:18` is built from `Dockerfile` (Odoo 18 + `config/requirements.txt`). Rebuild after changing requirements:
 
@@ -228,7 +230,7 @@ sudo rm -rf database
 - `config/odoo.conf`: `data_dir = /var/lib/odoo`, addons path includes `/mnt/extra_addons`
 - Do not put a real `admin_passwd` in git; it is injected at container start from `ODOO_ADMIN_PASSWD`
 - `proxy_mode` is injected from `ODOO_PROXY_MODE` (`False` locally, `True` under the Traefik overlay). Do not set it in `odoo.conf` — with `proxy_mode` on and no proxy, clients can spoof `X-Forwarded-*`
-- `workers = 2` runs Odoo in prefork mode so the gevent worker serves `/websocket` and `/longpolling` on `:8072`. Tune to the host (≈ `2 × CPU + 1`)
+- `workers` is injected from `ODOO_WORKERS` (`0` locally, `2` under the Traefik overlay). With `workers ≥ 1`, Odoo runs prefork and the gevent worker serves `/websocket` and `/longpolling` on `:8072` — a reverse proxy must route those paths there (the browser always uses the same host/port as the app). With `workers = 0`, websockets work on the HTTP port (`:8069`). Do not set `workers ≥ 1` for bare `localhost` access without a proxy or you will see `Couldn't bind the websocket… evented port (8072)`
 
 ## 11. Multi-DB by subdomain (rare, optional)
 

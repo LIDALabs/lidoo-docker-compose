@@ -23,15 +23,18 @@ chown odoo:odoo "$ERR_LOG"
 
 # Runtime config: start from the read-only odoo.conf, then inject values that
 # must not live in git (master password) or that depend on the deploy:
-# proxy_mode is only safe behind a trusted reverse proxy (Traefik), so it is
-# off by default and turned on via ODOO_PROXY_MODE in the Traefik overlay.
+# - proxy_mode is only safe behind a trusted reverse proxy (Traefik)
+# - workers > 0 starts prefork + gevent on :8072 (needed when a proxy routes
+#   /websocket and /longpolling there). Local direct access (no proxy) must
+#   use workers = 0 so the threaded server can handle websockets on :8069.
 # `|| true` guards against `set -e` when grep matches nothing to strip.
 export ODOO_RC="$DATA_DIR/odoo.runtime.conf"
 umask 077
 {
-  grep -v -E '^[[:space:]]*(admin_passwd|proxy_mode)[[:space:]]*=' /etc/odoo/odoo.conf || true
+  grep -v -E '^[[:space:]]*(admin_passwd|proxy_mode|workers)[[:space:]]*=' /etc/odoo/odoo.conf || true
   printf 'admin_passwd = %s\n' "$ODOO_ADMIN_PASSWD"
   printf 'proxy_mode = %s\n'   "${ODOO_PROXY_MODE:-False}"
+  printf 'workers = %s\n'      "${ODOO_WORKERS:-0}"
 } > "$ODOO_RC"
 chown odoo:odoo "$ODOO_RC"
 

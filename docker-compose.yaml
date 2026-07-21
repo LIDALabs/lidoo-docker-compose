@@ -16,6 +16,8 @@ services:
       ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
       # Only safe behind a trusted proxy; the Traefik overlay overrides this to True.
       ODOO_PROXY_MODE: ${ODOO_PROXY_MODE:-False}
+      # 0 = local (websockets on :8069). Traefik overlay sets 2 (gevent on :8072).
+      ODOO_WORKERS: ${ODOO_WORKERS:-0}
     # Runs as root to fix volume ownership + inject secrets, then drops to `odoo`
     # (see docker/odoo-start.sh, baked into the image).
     user: root
