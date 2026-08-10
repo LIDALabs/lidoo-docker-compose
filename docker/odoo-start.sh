@@ -52,8 +52,13 @@ DROP=(setpriv --reuid=odoo --regid=odoo --init-groups -- env HOME="$DATA_DIR")
 "${DROP[@]}" /usr/local/bin/odoo-logsplit "$ERR_LOG" < "$FIFO" &
 SPLIT_PID=$!
 
-# Official Odoo entrypoint (it execs `odoo`, so $ODOO_PID is the Odoo process).
-"${DROP[@]}" /entrypoint.sh odoo > "$FIFO" 2>&1 &
+# Official Odoo entrypoint. Forward compose/run arguments; default to the
+# normal `odoo` command when the service starts without an explicit command.
+ODOO_ARGS=("$@")
+if [ "${#ODOO_ARGS[@]}" -eq 0 ]; then
+  ODOO_ARGS=(odoo)
+fi
+"${DROP[@]}" /entrypoint.sh "${ODOO_ARGS[@]}" > "$FIFO" 2>&1 &
 ODOO_PID=$!
 
 # Forward termination to Odoo and drain the splitter so no log line is lost on
