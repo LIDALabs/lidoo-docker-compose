@@ -3,82 +3,103 @@ services:
     restart: always
     build: .
     image: lidoo-odoo:18
+
     depends_on:
       db:
         condition: service_healthy
+
+    # Standalone mode:
+    #   http://SERVER:${ODOO_HTTP_PORT:-10018}
+    #
+    # When using Traefik, these ports may remain published. If you only want
+    # local host access while Traefik handles public traffic, set:
+    #   ODOO_BIND_ADDRESS=127.0.0.1
     ports:
-      - "${ODOO_HTTP_PORT:-10018}:8069"
-      - "${ODOO_GEVENT_PORT:-20018}:8072"
+      - "${ODOO_BIND_ADDRESS:-0.0.0.0}:${ODOO_HTTP_PORT:-10018}:8069"
+      - "${ODOO_BIND_ADDRESS:-0.0.0.0}:${ODOO_GEVENT_PORT:-20018}:8072"
+
     environment:
       HOST: db
       USER: ${POSTGRES_USER:-odoo}
       PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       ODOO_ADMIN_PASSWD: ${ODOO_ADMIN_PASSWD:?set ODOO_ADMIN_PASSWD in .env}
-      # Only safe behind a trusted proxy; the Traefik overlay overrides this to True.
+
+      # Safe standalone defaults. The Traefik overlay overrides these.
       ODOO_PROXY_MODE: ${ODOO_PROXY_MODE:-False}
-      # 0 = local (websockets on :8069). Traefik overlay sets 2 (gevent on :8072).
       ODOO_WORKERS: ${ODOO_WORKERS:-0}
-    # Runs as root to fix volume ownership + inject secrets, then drops to `odoo`
-    # (see docker/odoo-start.sh, baked into the image).
+
     user: root
     entrypoint: ["/usr/local/bin/odoo-start.sh"]
+
     volumes:
       - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
       - odoo_data:/var/lib/odoo
       - odoo_logs:/var/log/odoo
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
+
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8069/web/login" ]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8069/web/login"]
       interval: 5s
       timeout: 10s
       retries: 30
       start_period: 30s
+
     networks:
       - intranet
-    # Traefik labels live only in docker-compose.traefik.yaml (optional overlay)
 
   db:
     restart: always
     image: postgres:17
+
     environment:
       POSTGRES_DB: postgres
       PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_USER: ${POSTGRES_USER:-odoo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       PGDATA: /var/lib/postgresql/data
+
     volumes:
       - db_data:/var/lib/postgresql/data
+
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
       interval: 5s
       timeout: 20s
       retries: 10
+
     networks:
       - intranet
 
   pgadmin:
     restart: always
     image: dpage/pgadmin4:9.15
+
     depends_on:
       db:
         condition: service_healthy
+
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?set PGADMIN_DEFAULT_EMAIL in .env}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?set PGADMIN_DEFAULT_PASSWORD in .env}
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+
     ports:
       - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+
     networks:
       - intranet
+
 
 volumes:
   odoo_data:
   odoo_logs:
   db_data:
   pgadmin_data:
+
 
 networks:
   intranet:

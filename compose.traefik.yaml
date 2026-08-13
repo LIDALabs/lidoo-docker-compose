@@ -1,0 +1,64 @@
+# Usage: set in .env:
+#   COMPOSE_FILE=compose.yaml:compose.traefik.yaml
+
+services:
+  odoo:
+    environment:
+      ODOO_PROXY_MODE: "True"
+      ODOO_WORKERS: ${ODOO_WORKERS:-2}
+
+    networks:
+      - intranet
+      - traefik-public
+
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+
+      # Main application: HTTP -> HTTPS
+      - traefik.http.routers.odoo-http.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
+      - traefik.http.routers.odoo-http.entrypoints=web
+      - traefik.http.routers.odoo-http.middlewares=odoo-redirect-to-https
+      - traefik.http.routers.odoo-http.service=odoo-service
+      - traefik.http.routers.odoo-http.priority=1
+
+      # Main application: HTTPS
+      - traefik.http.routers.odoo-https.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
+      - traefik.http.routers.odoo-https.entrypoints=websecure
+      - traefik.http.routers.odoo-https.service=odoo-service
+      - traefik.http.routers.odoo-https.tls=true
+      - traefik.http.routers.odoo-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.odoo-https.middlewares=odoo-gzip,odoo-sslheader
+      - traefik.http.routers.odoo-https.priority=1
+
+      # Websocket / longpolling: HTTP -> HTTPS
+      - traefik.http.routers.odoo-im-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-http.entrypoints=web
+      - traefik.http.routers.odoo-im-http.middlewares=odoo-redirect-to-https
+      - traefik.http.routers.odoo-im-http.service=odoo-im-service
+      - traefik.http.routers.odoo-im-http.priority=100
+
+      # Websocket / longpolling: HTTPS -> gevent
+      - traefik.http.routers.odoo-im-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-https.entrypoints=websecure
+      - traefik.http.routers.odoo-im-https.service=odoo-im-service
+      - traefik.http.routers.odoo-im-https.tls=true
+      - traefik.http.routers.odoo-im-https.tls.certresolver=letsencrypt
+      - traefik.http.routers.odoo-im-https.middlewares=odoo-sslheader
+      - traefik.http.routers.odoo-im-https.priority=100
+
+      # Internal Odoo ports used by Traefik over traefik-public.
+      - traefik.http.services.odoo-service.loadbalancer.server.port=8069
+      - traefik.http.services.odoo-im-service.loadbalancer.server.port=8072
+
+      # App-specific middleware names avoid collisions with Traefik itself.
+      - traefik.http.middlewares.odoo-gzip.compress=true
+      - traefik.http.middlewares.odoo-redirect-to-https.redirectscheme.scheme=https
+      - traefik.http.middlewares.odoo-redirect-to-https.redirectscheme.permanent=true
+      - traefik.http.middlewares.odoo-sslheader.headers.customrequestheaders.X-Forwarded-Proto=https
+
+
+networks:
+  traefik-public:
+    external: true
+    name: traefik-public
