@@ -31,10 +31,14 @@ chown odoo:odoo "$ERR_LOG"
 export ODOO_RC="$DATA_DIR/odoo.runtime.conf"
 umask 077
 {
-  grep -v -E '^[[:space:]]*(admin_passwd|proxy_mode|workers)[[:space:]]*=' /etc/odoo/odoo.conf || true
+  grep -v -E '^[[:space:]]*(admin_passwd|proxy_mode|workers|db_host|db_port|db_user|db_password)[[:space:]]*=' /etc/odoo/odoo.conf || true
   printf 'admin_passwd = %s\n' "$ODOO_ADMIN_PASSWD"
   printf 'proxy_mode = %s\n'   "${ODOO_PROXY_MODE:-False}"
   printf 'workers = %s\n'      "${ODOO_WORKERS:-0}"
+  printf 'db_host = %s\n'      "${HOST:-db}"
+  printf 'db_port = %s\n'      "${PORT:-5432}"
+  printf 'db_user = %s\n'      "${USER:-odoo}"
+  printf 'db_password = %s\n'  "$PASSWORD"
 } > "$ODOO_RC"
 chown odoo:odoo "$ODOO_RC"
 

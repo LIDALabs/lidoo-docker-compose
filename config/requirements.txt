@@ -3,3 +3,4 @@
 # paramiko==2.7.2  # for auto_backup module
 pandas==2.2.3
 beautifulsoup4==4.13.3
+click-odoo-contrib==1.23.1

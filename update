@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf 'Usage: %s -d DATABASE\n' "${0##*/}" >&2
+}
+
+DATABASE=
+while getopts ':d:' option; do
+  case "$option" in
+    d) DATABASE=$OPTARG ;;
+    *) usage; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [[ -z "$DATABASE" || $# -ne 0 ]]; then
+  usage
+  exit 2
+fi
+
+docker compose stop odoo
+trap 'docker compose up -d odoo' EXIT
+docker compose run --rm odoo click-odoo-update -d "$DATABASE"
