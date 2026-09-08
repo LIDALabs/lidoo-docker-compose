@@ -9,6 +9,7 @@ database/
 postgresql/
 
 # Local / runtime noise
+backups/
 *.log
 odoo-server.log
 .DS_Store

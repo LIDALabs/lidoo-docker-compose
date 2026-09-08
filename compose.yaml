@@ -35,6 +35,7 @@ services:
       - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
       - odoo_data:/var/lib/odoo
       - odoo_logs:/var/log/odoo
+      - ./backups:/backups
       - ./addons:/mnt/extra_addons
       - ./fonts:/usr/share/fonts/truetype/custom_fonts
 

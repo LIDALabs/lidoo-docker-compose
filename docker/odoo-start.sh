@@ -62,7 +62,16 @@ ODOO_ARGS=("$@")
 if [ "${#ODOO_ARGS[@]}" -eq 0 ]; then
   ODOO_ARGS=(odoo)
 fi
-"${DROP[@]}" /entrypoint.sh "${ODOO_ARGS[@]}" > "$FIFO" 2>&1 &
+
+# Backups are written to a host bind mount. Run that one-off command as root
+# so a normal host-owned ./backups directory is writable; use a host-readable
+# mode for the resulting archive.
+RUN_AS=("${DROP[@]}")
+if [ "${ODOO_ARGS[0]}" = click-odoo-backupdb ]; then
+  umask 022
+  RUN_AS=()
+fi
+"${RUN_AS[@]}" /entrypoint.sh "${ODOO_ARGS[@]}" > "$FIFO" 2>&1 &
 ODOO_PID=$!
 
 # Forward termination to Odoo and drain the splitter so no log line is lost on
