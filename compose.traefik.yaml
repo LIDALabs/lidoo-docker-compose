@@ -11,19 +11,21 @@ services:
       - intranet
       - traefik-public
 
+    # Router host match: ODOO_HOST_RULE,
+    # otherwise Host(`ODOO_HOSTNAME`).
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
 
       # Main application: HTTP -> HTTPS
-      - traefik.http.routers.odoo-http.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
+      - traefik.http.routers.odoo-http.rule=${ODOO_HOST_RULE:-Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME or ODOO_HOST_RULE in .env}`)}
       - traefik.http.routers.odoo-http.entrypoints=web
       - traefik.http.routers.odoo-http.middlewares=odoo-redirect-to-https
       - traefik.http.routers.odoo-http.service=odoo-service
       - traefik.http.routers.odoo-http.priority=1
 
       # Main application: HTTPS
-      - traefik.http.routers.odoo-https.rule=Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME in .env}`)
+      - traefik.http.routers.odoo-https.rule=${ODOO_HOST_RULE:-Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME or ODOO_HOST_RULE in .env}`)}
       - traefik.http.routers.odoo-https.entrypoints=websecure
       - traefik.http.routers.odoo-https.service=odoo-service
       - traefik.http.routers.odoo-https.tls=true
@@ -32,14 +34,14 @@ services:
       - traefik.http.routers.odoo-https.priority=1
 
       # Websocket / longpolling: HTTP -> HTTPS
-      - traefik.http.routers.odoo-im-http.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-http.rule=(${ODOO_HOST_RULE:-Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME or ODOO_HOST_RULE in .env}`)}) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
       - traefik.http.routers.odoo-im-http.entrypoints=web
       - traefik.http.routers.odoo-im-http.middlewares=odoo-redirect-to-https
       - traefik.http.routers.odoo-im-http.service=odoo-im-service
       - traefik.http.routers.odoo-im-http.priority=100
 
       # Websocket / longpolling: HTTPS -> gevent
-      - traefik.http.routers.odoo-im-https.rule=Host(`${ODOO_HOSTNAME}`) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
+      - traefik.http.routers.odoo-im-https.rule=(${ODOO_HOST_RULE:-Host(`${ODOO_HOSTNAME:?set ODOO_HOSTNAME or ODOO_HOST_RULE in .env}`)}) && (PathPrefix(`/websocket`) || PathPrefix(`/longpolling`))
       - traefik.http.routers.odoo-im-https.entrypoints=websecure
       - traefik.http.routers.odoo-im-https.service=odoo-im-service
       - traefik.http.routers.odoo-im-https.tls=true

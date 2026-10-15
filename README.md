@@ -100,6 +100,7 @@ Use only when you need HTTPS and a public hostname.
 | Variable | Purpose |
 |----------|---------|
 | `ODOO_HOSTNAME` | Public host for Odoo |
+| `ODOO_HOST_RULE` | Optional: full Traefik rule for several hosts (overrides `ODOO_HOSTNAME`, see §11) |
 | `LETS_ENCRYPT_CONTACT_EMAIL` | Let's Encrypt account email |
 | `TRAEFIK_HOSTNAME` | Traefik dashboard host |
 | `TRAEFIK_BASIC_AUTH` | Dashboard basic auth (`user:hash` from htpasswd) |
@@ -259,26 +260,23 @@ Example: `sub1.domain.com` → DB `sub1`, `sub2.domain.com` → DB `sub2`.
 
 ### Traefik (if public)
 
-8. Change Host rules in `docker-compose.traefik.yaml` to cover **all** hosts, e.g.:
-   ```text
-   Host(`sub1.domain.com`) || Host(`sub2.domain.com`)
+8. In `.env`, list **all** hosts in `ODOO_HOST_RULE` (overrides `ODOO_HOSTNAME`; keep the single quotes):
+   ```bash
+   ODOO_HOST_RULE='Host(`sub1.domain.com`) || Host(`sub2.domain.com`)'
    ```
-9. Use that same Host rule on:
-   - app → `8069`
-   - `/websocket` + `/longpolling` → `8072`
-10. TLS for both hosts (or `*.domain.com`)
-11. Redeploy:
+   It is applied to both the app (`8069`) and `/websocket` + `/longpolling` (`8072`) routers.
+9. Let's Encrypt issues a certificate per host in the rule (each must resolve to this server)
+10. Redeploy:
     ```bash
-    docker compose -f docker-compose.yaml -f docker-compose.traefik.yaml up -d
+    docker compose up -d
     ```
 
 ### Check
 
-12. `https://sub1.domain.com` → DB `sub1`  
-13. `https://sub2.domain.com` → DB `sub2`  
+11. `https://sub1.domain.com` → DB `sub1`  
+12. `https://sub2.domain.com` → DB `sub2`  
 
 ### Rules
 
 - DB name = first subdomain label (`%d`)
 - One Odoo service, one Postgres service — no second containers
-- pgAdmin unchanged: host `db`, port `5432`
