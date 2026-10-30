@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  printf 'Usage: %s -d DATABASE [-m MODULES]\n' "${0##*/}" >&2
+}
+
+DATABASE=
+MODULES=base
+while getopts ':d:m:' option; do
+  case "$option" in
+    d) DATABASE=$OPTARG ;;
+    m) MODULES=$OPTARG ;;
+    *) usage; exit 2 ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [[ -z "$DATABASE" || $# -ne 0 ]]; then
+  usage
+  exit 2
+fi
+
+docker compose stop odoo
+trap 'docker compose up -d odoo' EXIT
+docker compose run --rm odoo click-odoo-initdb -n "$DATABASE" -m "$MODULES" \
+  --no-demo --no-cache
